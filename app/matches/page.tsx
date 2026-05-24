@@ -51,15 +51,30 @@ export default function MatchesPage() {
   const savePrediction = async (matchId: string) => {
     const home = (document.getElementById(`home-${matchId}`) as HTMLInputElement).value
     const away = (document.getElementById(`away-${matchId}`) as HTMLInputElement).value
+    const userEmail = user?.email
 
-    await supabase.from("predictions").insert({
-      user_id: user?.id,
-      match_id: matchId,
-      predicted_home_score: Number(home),
-      predicted_away_score: Number(away),
-    })
+  const { data, error } = await supabase
+    .from("predictions")
+    .upsert(
+      {
+        user_id: user?.id,
+        user_email: user?.email,
+        match_id: matchId,
+        predicted_home_score: Number(home),
+        predicted_away_score: Number(away),
+      },
+      {
+        onConflict: "user_id,match_id",
+      }
+    )
 
-    alert("Typ zapisany!")
+  console.log("DATA:", data)
+  console.log("ERROR:", error)
+
+  if (error) {
+    alert(error.message)
+    return
+  }
 
     const { data: preds } = await supabase
       .from("predictions")
@@ -73,29 +88,37 @@ export default function MatchesPage() {
     return predictions.find((p) => p.match_id === matchId)
   }
 
+const sortedMatches = [...matches].sort((a, b) => {
+  const aStarted = new Date() >= new Date(a.match_time)
+  const bStarted = new Date() >= new Date(b.match_time)
+
+  // NIE rozpoczęte idą wyżej
+  return Number(aStarted) - Number(bStarted)
+})
+
 return (
   <div>
     <Navbar />
   
-  <div className="p-10">
+  <div className="max-w-3xl mx-auto p-10">
     <h1 className="text-3xl font-bold mb-6">
       Upcoming Matches ⚽
     </h1>
 
-    <div className="space-y-4">
-      {matches.map((match) => {
+    <div className="space-y-6">
+      {sortedMatches.map((match) => {
         const pred = predictions.find(
           (p) => p.match_id === match.id
         )
 
         return (
-          <div key={match.id} className="border rounded p-4">
+          <div key={match.id} className="bg-zinc-900 rounded-2xl p-6 shadow-md text-center">
 
-            <div className="text-xl font-semibold">
+            <div className="text-2xl font-bold text-white">
               {match.home_team} vs {match.away_team}
             </div>
 
-            <div className="text-sm text-gray-500 mt-1">
+            <div className="text-sm text-gray-400 mt-2">
               {new Date(match.match_time).toLocaleString()}
             </div>
 
@@ -112,23 +135,23 @@ return (
                 Typowanie zamknięte ⛔
               </div>
             ) : (
-              <div className="flex gap-2 mt-4">
+              <div className="flex gap-2 mt-4 justify-center items-center w-full">
                 <input
                   type="number"
                   placeholder="Home"
-                  className="border p-2 w-20"
+                  className="bg-zinc-800 rounded-lg p-2 w-20 text-white text-center"
                   id={`home-${match.id}`}
                 />
 
                 <input
                   type="number"
                   placeholder="Away"
-                  className="border p-2 w-20"
+                  className="bg-zinc-800 rounded-lg p-2 w-20 text-white text-center"
                   id={`away-${match.id}`}
                 />
 
                 <button
-                  className="bg-green-500 text-white px-4"
+                  className="bg-green-600 hover:bg-green-500 transition rounded-lg px-4 py-2 text-white font-semibold"
                   onClick={() => savePrediction(match.id)}
                 >
                   Save

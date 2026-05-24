@@ -19,10 +19,10 @@ export default function Navbar() {
       : "text-gray-700"
 
   return (
-    <div className="flex justify-between items-center p-4 border-b mb-6">
+    <div className="flex justify-between items-center p-4 mb-6">
       
       <Link href="/dashboard" className="font-bold text-lg">
-        ⚽ World Cup App
+        ⚽ World Cup Predictor
       </Link>
 
       <div className="flex gap-4 items-center">
