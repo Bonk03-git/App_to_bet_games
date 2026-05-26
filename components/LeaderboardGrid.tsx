@@ -25,6 +25,12 @@ type Cell = {
   points: number
 }
 
+type BonusPrediction = {
+  user_id: string
+  predicted_winner: string
+  predicted_top_scorer: string
+}
+
 const getPoints = (
   ph: number,
   pa: number,
@@ -44,9 +50,14 @@ const getPoints = (
   return pred === actual ? 1 : 0
 }
 
+const ACTUAL_WINNER = "" // tu po zakończeniu turnieju wpisujemy zwycięzcę, żeby przyznać punkty bonusowe za typowanie zwycięzcy
+const ACTUAL_TOP_SCORER = "" // tu po zakończeniu turnieju wpisujemy najlepšego strzelca, żeby przyznać punkty bonusowe za typowanie najlepšego strzelca
+
+
 export default function LeaderboardGrid() {
   const [matches, setMatches] = useState<Match[]>([])
   const [predictions, setPredictions] = useState<Prediction[]>([])
+  const [bonusPredictions, setBonusPredictions] = useState<BonusPrediction[]>([])
   const isMatchStarted = (matchTime: string) => {
     return new Date() >= new Date(matchTime)
   }
@@ -61,6 +72,11 @@ export default function LeaderboardGrid() {
         .from("predictions")
         .select("*")
 
+      const { data: bonusData } = await supabase
+        .from("bonus_predictions")
+        .select("*")
+
+      setBonusPredictions(bonusData || [])
       setMatches(matchesData || [])
       setPredictions(predsData || [])
     }
@@ -95,7 +111,6 @@ export default function LeaderboardGrid() {
       const pa = Number(p.predicted_away_score ?? 0)
 
       const started = isMatchStarted(match.match_time)
-
       const points = started
         ? getPoints(
             Number(p.predicted_home_score ?? 0),
@@ -114,12 +129,31 @@ export default function LeaderboardGrid() {
         points,
       }
     })
+      
+    const bonusPoints: Record<string, number> = {}
+    bonusPredictions.forEach((b) => {
+      let points = 0
+
+      if (
+        b.predicted_winner === ACTUAL_WINNER
+      ) {
+        points += 5
+      }
+
+      if (
+        b.predicted_top_scorer === ACTUAL_TOP_SCORER
+      ) {
+        points += 5
+      }
+
+      bonusPoints[b.user_id] = points
+    })
 
     // TOTALS
     Object.keys(usersMap).forEach((userId) => {
       totals[userId] = Object.values(
         grid[userId] || {}
-      ).reduce((sum, cell) => sum + cell.points, 0)
+      ).reduce((sum, cell) => sum + cell.points, 0) + (bonusPoints[userId] || 0)
     })
 
     return { usersMap, grid, totals }
@@ -146,6 +180,14 @@ export default function LeaderboardGrid() {
             </div>
           </div>
         ))}
+
+        <div className="w-28 text-center text-xs font-bold">
+          Winner
+        </div>
+
+        <div className="w-28 text-center text-xs font-bold">
+          Top Scorer
+        </div>
 
         <div className="w-20 sticky right-0 bg-white z-40">
           SUM
@@ -193,6 +235,36 @@ export default function LeaderboardGrid() {
                 </div>
               )
             })}
+
+            {(() => {
+              const bonus = bonusPredictions.find(
+                (b) => b.user_id === userId
+              )
+
+              const winnerCorrect =
+                bonus?.predicted_winner === ACTUAL_WINNER
+
+              const scorerCorrect =
+                bonus?.predicted_top_scorer === ACTUAL_TOP_SCORER
+
+              return (
+                <>
+                  <div className="w-28 text-center text-xs">
+                    {bonus?.predicted_winner || "-"}
+                    <div className="font-bold">
+                      {winnerCorrect ? 5 : 0}
+                    </div>
+                  </div>
+
+                  <div className="w-28 text-center text-xs">
+                    {bonus?.predicted_top_scorer || "-"}
+                    <div className="font-bold">
+                      {scorerCorrect ? 5 : 0}
+                    </div>
+                  </div>
+                </>
+              )
+            })()}
 
             {/* TOTAL */}
             <div className="w-20 sticky right-0 bg-white z-30 shadow-md">

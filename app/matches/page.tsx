@@ -5,6 +5,77 @@ import { supabase } from "@/lib/supabase"
 import { useUser } from "@/lib/useUser"
 import Navbar from "@/components/Navbar"
 import { useRequireAuth } from "@/lib/useRequireAuth"
+const TOURNAMENT_START = "2026-06-11T00:00:00" // tu zmieniamy kiedy ruszaja mistrzostwa, potem typowanie bonusowe sie zamyka
+const WORLD_CUP_COUNTRIES = [
+  "Algieria",
+  "Anglia",
+  "Arabia Saudyjska",
+  "Argentyna",
+  "Australia",
+  "Austria",
+
+  "Belgia",
+  "Bośnia i Hercegowina",
+  "Brazylia",
+
+  "Czechy",
+  "Curaçao",
+  "Chorwacja",
+
+  "DR Kongo",
+
+  "Egipt",
+  "Ekwador",
+
+  "Francja",
+
+  "Ghana",
+
+  "Haiti",
+  "Hiszpania",
+  "Holandia",
+
+  "Irak",
+  "Iran",
+
+  "Japonia",
+  "Jordania",
+
+  "Kanada",
+  "Katar",
+  "Kolumbia",
+  "Korea Południowa",
+
+  "Maroko",
+  "Meksyk",
+
+  "Niemcy",
+  "Nowa Zelandia",
+  "Norwegia",
+
+  "Paragwaj",
+  "Portugalia",
+  "Panama",
+
+  "Republika Zielonego Przylądka",
+  "RPA",
+
+  "Senegal",
+  "Szkocja",
+  "Szwajcaria",
+  "Szwecja",
+
+  "Tunezja",
+  "Turcja",
+
+  "USA",
+
+  "Uzbekistan",
+
+  "Urugwaj",
+
+  "Wybrzeże Kości Słoniowej"
+]
 
 interface Match {
   id: string
@@ -17,9 +88,12 @@ export default function MatchesPage() {
     const [matches, setMatches] = useState<Match[]>([])
     const { user } = useUser()
     const [predictions, setPredictions] = useState<any[]>([])
-
+    const [bonusPrediction, setBonusPrediction] = useState<any>(null)
     const isMatchStarted = (matchTime: string) => {
     return new Date() > new Date(matchTime)
+    }
+    const isTournamentStarted = () => {
+      return new Date() >= new Date(TOURNAMENT_START)
     }
     useRequireAuth()
 
@@ -43,6 +117,14 @@ export default function MatchesPage() {
         .eq("user_id", user.id)
 
       setPredictions(preds || [])
+      // bonus prediction
+      const { data: bonus } = await supabase
+        .from("bonus_predictions")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle()
+
+      setBonusPrediction(bonus)
     }
 
     fetchData()
@@ -84,6 +166,49 @@ export default function MatchesPage() {
     setPredictions(preds || [])
   }
 
+  const saveBonusPrediction = async () => {
+    if (isTournamentStarted()) {
+      alert("Typowanie bonusowe zamknięte ⛔")
+      return
+    }
+    if (!user?.id) return
+    const winner = (
+      document.getElementById("winner") as HTMLInputElement
+    ).value
+
+    const scorer = (
+      document.getElementById("scorer") as HTMLInputElement
+    ).value
+
+    if (!winner) return alert("Wybierz zwycięzcę MŚ")
+    if (!scorer) return alert("Wpisz króla strzelców")
+
+    const { error } = await supabase
+      .from("bonus_predictions")
+      .upsert(
+        {
+          user_id: user.id,
+          user_email: user.email,
+          predicted_winner: winner,
+          predicted_top_scorer: scorer,
+        },
+        {
+          onConflict: "user_id",
+        }
+      )
+      console.log("ERROR BONUS:", error)
+      if (!error) {
+        const { data: updated } = await supabase
+          .from("bonus_predictions")
+          .select("*")
+          .eq("user_id", user.id)
+          .single()
+
+        setBonusPrediction(updated)
+      }
+
+  }
+
     const getPrediction = (matchId: string) => {
     return predictions.find((p) => p.match_id === matchId)
   }
@@ -101,6 +226,76 @@ return (
     <Navbar />
   
   <div className="max-w-3xl mx-auto p-10">
+
+    <div className="bg-zinc-900 rounded-2xl p-6 mb-8 text-white">
+      <h2 className="text-2xl font-bold mb-4">
+        Bonusy
+      </h2>
+
+      {!isTournamentStarted() && bonusPrediction && (
+        <div className="mb-4 text-blue-400 text-center">
+          Aktualne typy:{" "}
+          <span className="font-semibold">
+            {bonusPrediction.predicted_winner}
+          </span>{" "}
+          |{" "}
+          <span className="font-semibold">
+            {bonusPrediction.predicted_top_scorer}
+          </span>
+        </div>
+      )}
+
+      {isTournamentStarted() ? (
+        <div className="text-center text-gray-300 space-y-2">
+          <div>
+            <p>
+              Wytypowany zwycięzca:{" "}
+              <span className="font-bold text-white">
+                {bonusPrediction?.predicted_winner || "-"}
+              </span>
+            </p>
+
+            <p>
+              Wytypowany król strzelców:{" "}
+              <span className="font-bold text-white">
+                {bonusPrediction?.predicted_top_scorer || "-"}
+              </span>
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          
+          <select
+            id="winner"
+            className="bg-zinc-800 p-3 rounded-lg"
+            defaultValue={bonusPrediction?.predicted_winner || ""}
+          >
+            <option value="">Select winner</option>
+            {WORLD_CUP_COUNTRIES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+
+          <input
+            id="scorer"
+            placeholder="Top Scorer"
+            className="bg-zinc-800 p-3 rounded-lg"
+            defaultValue={bonusPrediction?.predicted_top_scorer || ""}
+          />
+
+          <button
+            onClick={saveBonusPrediction}
+            className="bg-yellow-600 hover:bg-yellow-500 transition rounded-lg p-3 font-bold"
+          >
+            Save Bonus Predictions
+          </button>
+        </div>
+      )}
+    </div>
+
     <h1 className="text-3xl font-bold mb-6">
       Upcoming Matches ⚽
     </h1>
