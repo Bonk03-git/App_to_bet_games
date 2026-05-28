@@ -161,35 +161,59 @@ export default function LeaderboardGrid() {
 
   const { usersMap, grid, totals } = gridData
 
+  const getUserColumnWidth = (users: Record<string, { email: string }>) => {
+    const names = Object.values(users).map(u =>
+      (u.email?.split("@")[0] || "")
+    )
+
+    const longest = Math.max(...names.map(n => n.length))
+
+    // ~10px per znak (prosty heuristic)
+    return Math.min(Math.max(longest * 10 + 40, 120), 300)
+  }
+
+  const userWidth = getUserColumnWidth(usersMap)
+
+  const gridTemplate =
+    `${userWidth}px repeat(` +
+    matches.length +
+    ", 110px) 120px 120px 90px"
+
   return (
     <div className="p-4 overflow-x-auto">
-
+      <div className="overflow-x-auto relative">
+      <div className="min-w-max">
       {/* HEADER */}
-      <div className="flex font-bold border-b pb-2 bg-white sticky top-0 z-10">
-        <div className="w-40 sticky left-0 bg-white z-40">
-          User
+      <div
+      className="grid font-bold border-b sticky top-0 z-10 items-center text-center justify-center"
+      style={{ gridTemplateColumns: gridTemplate }}
+      >
+        <div className="sticky left-0 bg-zinc-950 text-white px-4 flex items-center justify-center whitespace-nowrap h-full">
+          Gracz
         </div>
 
         {matches.map((m) => (
           <div
             key={m.id}
-            className="w-28 text-center text-xs px-2"
+            className="text-center items-center justify-center text-xs px-2 border-l border-white h-full"
           >
-            <div className="font-semibold">
-              {m.home_team} {m.home_score ?? "-"}-{m.away_score ?? "-"} {m.away_team}
+            <div className="flex flex-col items-center justify-center leading-tight">
+              <span className="font-bold">{m.home_team}</span>
+              <span className="text-gray-400 text-[10px]">vs</span>
+              <span className="font-bold">{m.away_team}</span>
             </div>
           </div>
         ))}
 
-        <div className="w-28 text-center text-xs font-bold">
+        <div className="text-center text-xs font-bold h-full border-l border-white">
           Winner
         </div>
 
-        <div className="w-28 text-center text-xs font-bold">
+        <div className="text-center text-xs font-bold h-full border-l border-white border-r">
           Top Scorer
         </div>
 
-        <div className="w-20 sticky right-0 bg-white z-40">
+        <div className="sticky right-0 bg-zinc-950 text-white px-3 flex items-center justify-center h-full">
           SUM
         </div>
       </div>
@@ -198,12 +222,13 @@ export default function LeaderboardGrid() {
       <div>
         {Object.keys(usersMap).map((userId) => (
           <div
-            key={userId}
-            className="flex border-b py-2"
+            key = {userId}
+            className="grid border-b py-2 items-stretch justify-center text-center"
+            style={{ gridTemplateColumns: gridTemplate }}
           >
 
             {/* USER */}
-            <div className="w-40 sticky left-0 bg-white z-30 shadow-md">
+            <div className="sticky left-0 bg-zinc-950 text-white px-3 flex items-stretch justify-center text-center shadow-md">
               {usersMap[userId].email?.split("@")[0]}
             </div>
 
@@ -214,7 +239,7 @@ export default function LeaderboardGrid() {
               return (
                 <div
                   key={m.id}
-                  className="w-28 text-center text-xs"
+                  className="flex flex-col items-center justify-center text-xs h-full border-l border-white"
                 >
                   {cell ? (
                     isMatchStarted(m.match_time) ? (
@@ -249,14 +274,14 @@ export default function LeaderboardGrid() {
 
               return (
                 <>
-                  <div className="w-28 text-center text-xs">
+                  <div className="flex flex-col items-center justify-center text-xs h-full border-l border-white">
                     {bonus?.predicted_winner || "-"}
                     <div className="font-bold">
                       {winnerCorrect ? 5 : 0}
                     </div>
                   </div>
 
-                  <div className="w-28 text-center text-xs">
+                  <div className="flex flex-col items-center justify-center text-xs h-full border-l border-r h-full border-white">
                     {bonus?.predicted_top_scorer || "-"}
                     <div className="font-bold">
                       {scorerCorrect ? 5 : 0}
@@ -267,12 +292,14 @@ export default function LeaderboardGrid() {
             })()}
 
             {/* TOTAL */}
-            <div className="w-20 sticky right-0 bg-white z-30 shadow-md">
+            <div className="w-20 sticky right-0 bg-zinc-950 z-30 shadow-md">
               {totals[userId] || 0}
             </div>
 
           </div>
         ))}
+      </div>
+      </div>
       </div>
     </div>
   )

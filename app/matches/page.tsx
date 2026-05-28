@@ -5,7 +5,6 @@ import { supabase } from "@/lib/supabase"
 import { useUser } from "@/lib/useUser"
 import Navbar from "@/components/Navbar"
 import { useRequireAuth } from "@/lib/useRequireAuth"
-const TOURNAMENT_START = "2026-06-11T00:00:00" // tu zmieniamy kiedy ruszaja mistrzostwa, potem typowanie bonusowe sie zamyka
 const WORLD_CUP_COUNTRIES = [
   "Algieria",
   "Anglia",
@@ -92,8 +91,17 @@ export default function MatchesPage() {
     const isMatchStarted = (matchTime: string) => {
     return new Date() > new Date(matchTime)
     }
+    
     const isTournamentStarted = () => {
-      return new Date() >= new Date(TOURNAMENT_START)
+      if (matches.length === 0) return false
+
+      const firstMatch = [...matches].sort(
+        (a, b) =>
+          new Date(a.match_time).getTime() -
+          new Date(b.match_time).getTime()
+      )[0]
+
+      return new Date() >= new Date(firstMatch.match_time)
     }
     useRequireAuth()
 
