@@ -61,6 +61,11 @@ export default function LeaderboardGrid() {
   const isMatchStarted = (matchTime: string) => {
     return new Date() >= new Date(matchTime)
   }
+  const isTournamentStarted = () => {
+    if (matches.length === 0) return false
+
+    return new Date() >= new Date(matches[0].match_time)
+  }
   useEffect(() => {
     const fetchData = async () => {
       const { data: matchesData } = await supabase
@@ -111,14 +116,17 @@ export default function LeaderboardGrid() {
       const pa = Number(p.predicted_away_score ?? 0)
 
       const started = isMatchStarted(match.match_time)
-      const points = started
-        ? getPoints(
-            Number(p.predicted_home_score ?? 0),
-            Number(p.predicted_away_score ?? 0),
-            Number(match.home_score ?? 0),
-            Number(match.away_score ?? 0)
+      const points =
+        started &&
+        match.home_score != null &&
+        match.away_score != null
+          ? getPoints(
+              Number(p.predicted_home_score ?? 0),
+              Number(p.predicted_away_score ?? 0),
+              match.home_score,
+              match.away_score
             )
-        : 0
+          : 0
 
       if (!grid[p.user_id]) {
         grid[p.user_id] = {}
@@ -275,17 +283,33 @@ export default function LeaderboardGrid() {
               return (
                 <>
                   <div className="flex flex-col items-center justify-center text-xs h-full border-l border-white">
-                    {bonus?.predicted_winner || "-"}
-                    <div className="font-bold">
-                      {winnerCorrect ? 5 : 0}
-                    </div>
+                    {isTournamentStarted() ? (
+                      <>
+                        <div>{bonus?.predicted_winner || "-"}</div>
+                        <div className="font-bold">
+                          {winnerCorrect ? 5 : 0}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-gray-400 text-lg">
+                        🔒
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex flex-col items-center justify-center text-xs h-full border-l border-r h-full border-white">
-                    {bonus?.predicted_top_scorer || "-"}
-                    <div className="font-bold">
-                      {scorerCorrect ? 5 : 0}
-                    </div>
+                    {isTournamentStarted() ? (
+                      <>
+                        <div>{bonus?.predicted_top_scorer || "-"}</div>
+                        <div className="font-bold">
+                          {scorerCorrect ? 5 : 0}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-gray-400 text-lg">
+                        🔒
+                      </div>
+                    )}
                   </div>
                 </>
               )
