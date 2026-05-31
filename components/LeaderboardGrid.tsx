@@ -20,31 +20,52 @@ type Prediction = {
   predicted_away_score: number
 }
 
+type Cell = {
+  prediction: string
+  points: number
+}
+
 type BonusPrediction = {
   user_id: string
   predicted_winner: string
   predicted_top_scorer: string
 }
 
-const ACTUAL_WINNER = ""
-const ACTUAL_TOP_SCORER = ""
-
-const getPoints = (ph: number, pa: number, ah: number, aa: number) => {
+const getPoints = (
+  ph: number,
+  pa: number,
+  ah: number,
+  aa: number
+) => {
   if (ah == null || aa == null) return 0
 
   if (ph === ah && pa === aa) return 3
 
-  const pred = ph > pa ? "H" : ph < pa ? "A" : "D"
-  const actual = ah > aa ? "H" : ah < aa ? "A" : "D"
+  const pred =
+    ph > pa ? "H" : ph < pa ? "A" : "D"
+
+  const actual =
+    ah > aa ? "H" : ah < aa ? "A" : "D"
 
   return pred === actual ? 1 : 0
 }
+
+const ACTUAL_WINNER = "" // tu po zakończeniu turnieju wpisujemy zwycięzcę, żeby przyznać punkty bonusowe za typowanie zwycięzcy
+const ACTUAL_TOP_SCORER = "" // tu po zakończeniu turnieju wpisujemy najlepšego strzelca, żeby przyznać punkty bonusowe za typowanie najlepšego strzelca
+
 
 export default function LeaderboardGrid() {
   const [matches, setMatches] = useState<Match[]>([])
   const [predictions, setPredictions] = useState<Prediction[]>([])
   const [bonusPredictions, setBonusPredictions] = useState<BonusPrediction[]>([])
+  const isMatchStarted = (matchTime: string) => {
+    return new Date() >= new Date(matchTime)
+  }
+  const isTournamentStarted = () => {
+    if (matches.length === 0) return false
 
+    return new Date() >= new Date(matches[0].match_time)
+  }
   useEffect(() => {
     const fetchData = async () => {
       const { data: matchesData } = await supabase
@@ -60,75 +81,149 @@ export default function LeaderboardGrid() {
         .from("bonus_predictions")
         .select("*")
 
+      setBonusPredictions(bonusData || [])
       setMatches(matchesData || [])
       setPredictions(predsData || [])
-      setBonusPredictions(bonusData || [])
     }
 
     fetchData()
   }, [])
 
-  const { users, rows, totals } = useMemo(() => {
-    const usersMap: Record<string, string> = {}
-    const rows: Record<string, Record<string, string>> = {}
+  const gridData = useMemo(() => {
+    const usersMap: Record<string, { email: string }> = {}
+
+    const grid: Record<
+      string,
+      Record<string, Cell>
+    > = {}
+
     const totals: Record<string, number> = {}
 
+    // BUILD GRID
     predictions.forEach((p) => {
-      usersMap[p.user_id] = p.user_email.split("@")[0]
-
-      if (!rows[p.user_id]) rows[p.user_id] = {}
-
-      const match = matches.find((m) => m.id === p.match_id)
+      const match = matches.find(
+        (m) => m.id === p.match_id
+      )
       if (!match) return
 
-      const ph = Number(p.predicted_home_score)
-      const pa = Number(p.predicted_away_score)
+      if (!usersMap[p.user_id]) {
+        usersMap[p.user_id] = {
+          email: p.user_email,
+        }
+      }
 
-      const started = new Date() >= new Date(match.match_time)
+      const ph = Number(p.predicted_home_score ?? 0)
+      const pa = Number(p.predicted_away_score ?? 0)
 
+      const started = isMatchStarted(match.match_time)
       const points =
-        started && match.home_score != null && match.away_score != null
-          ? getPoints(ph, pa, match.home_score, match.away_score)
+        started &&
+        match.home_score != null &&
+        match.away_score != null
+          ? getPoints(
+              Number(p.predicted_home_score ?? 0),
+              Number(p.predicted_away_score ?? 0),
+              match.home_score,
+              match.away_score
+            )
           : 0
 
-      rows[p.user_id][p.match_id] = `${ph}-${pa} (${points})`
+      if (!grid[p.user_id]) {
+        grid[p.user_id] = {}
+      }
+
+      grid[p.user_id][p.match_id] = {
+        prediction: `${ph}-${pa}`,
+        points,
+      }
+    })
+      
+    const bonusPoints: Record<string, number> = {}
+    bonusPredictions.forEach((b) => {
+      let points = 0
+
+      if (
+        b.predicted_winner === ACTUAL_WINNER
+      ) {
+        points += 5
+      }
+
+      if (
+        b.predicted_top_scorer === ACTUAL_TOP_SCORER
+      ) {
+        points += 5
+      }
+
+      bonusPoints[b.user_id] = points
     })
 
-    Object.keys(usersMap).forEach((uid) => {
-      totals[uid] = Object.values(rows[uid] || {}).reduce((acc, val) => {
-        const match = val.match(/\((\d+)\)/)
-        return acc + (match ? Number(match[1]) : 0)
-      }, 0)
+    // TOTALS
+    Object.keys(usersMap).forEach((userId) => {
+      totals[userId] = Object.values(
+        grid[userId] || {}
+      ).reduce((sum, cell) => sum + cell.points, 0) + (bonusPoints[userId] || 0)
     })
 
-    return { users: usersMap, rows, totals }
+    return { usersMap, grid, totals }
   }, [matches, predictions])
 
-  return (
-    <div className="p-4 overflow-x-auto">
-      <table className="min-w-max w-full border-collapse text-sm">
+  const { usersMap, grid, totals } = gridData
+
+  const getUserColumnWidth = (users: Record<string, { email: string }>) => {
+    const names = Object.values(users).map(u =>
+      (u.email?.split("@")[0] || "")
+    )
+
+    const longest = Math.max(...names.map(n => n.length))
+
+    // ~10px per znak (prosty heuristic)
+    return Math.min(Math.max(longest * 10 + 40, 120), 300)
+  }
+
+  const userWidth = getUserColumnWidth(usersMap)
+
+  const gridTemplate =
+    `${userWidth}px repeat(${matches.length}, 110px) 120px 120px 90px`
+
+return (
+  <div className="p-4 overflow-x-auto w-full">
+    <div className="min-w-max">
+
+      <table className="border-collapse w-full text-xs">
 
         {/* HEADER */}
         <thead>
-          <tr className="bg-zinc-900 text-white">
-            <th className="sticky left-0 z-20 bg-zinc-900 px-3 py-2 text-left min-w-[140px]">
-              User
+          <tr className="bg-zinc-950 text-white sticky top-0 z-30">
+
+            {/* USER */}
+            <th className="sticky left-0 z-40 bg-zinc-950 px-4 py-2 text-center border-r border-zinc-800">
+              Gracz
             </th>
 
+            {/* MATCHES */}
             {matches.map((m) => (
-              <th key={m.id} className="px-3 py-2 min-w-[120px] text-center">
-                <div className="flex flex-col leading-tight">
+              <th
+                key={m.id}
+                className="px-3 py-2 min-w-[110px] border-l border-zinc-800"
+              >
+                <div className="flex flex-col items-center leading-tight">
                   <span className="font-bold">{m.home_team}</span>
-                  <span className="text-xs text-gray-400">vs</span>
+                  <span className="text-gray-400 text-[10px]">vs</span>
                   <span className="font-bold">{m.away_team}</span>
                 </div>
               </th>
             ))}
 
-            <th className="px-3 py-2 min-w-[120px]">Winner</th>
-            <th className="px-3 py-2 min-w-[120px]">Top Scorer</th>
+            <th className="px-3 py-2 border-l border-zinc-800">
+              Winner
+            </th>
 
-            <th className="sticky right-0 z-20 bg-zinc-900 px-3 py-2 min-w-[90px]">
+            <th className="px-3 py-2 border-l border-zinc-800">
+              Top Scorer
+            </th>
+
+            {/* SUM */}
+            <th className="sticky right-0 z-40 bg-zinc-950 px-3 py-2 border-l border-zinc-800">
               SUM
             </th>
           </tr>
@@ -136,37 +231,105 @@ export default function LeaderboardGrid() {
 
         {/* BODY */}
         <tbody>
-          {Object.keys(users).map((uid, i) => (
+          {Object.keys(usersMap).map((userId, i) => (
             <tr
-              key={uid}
-              className={i % 2 === 0 ? "bg-zinc-950" : "bg-zinc-900/40"}
+              key={userId}
+              className={
+                i % 2 === 0
+                  ? "bg-zinc-950"
+                  : "bg-zinc-900/40"
+              }
             >
 
               {/* USER */}
-              <td className="sticky left-0 z-10 bg-zinc-950 text-white px-3 py-2 font-medium">
-                {users[uid]}
+              <td className="sticky left-0 z-20 bg-zinc-950 text-white text-center px-4 py-2 font-medium border-r border-zinc-800">
+                {usersMap[userId].email?.split("@")[0]}
               </td>
 
-              {/* MATCHES */}
-              {matches.map((m) => (
-                <td key={m.id} className="text-center px-3 py-2">
-                  {rows[uid]?.[m.id] || "-"}
-                </td>
-              ))}
+              {/* MATCH CELLS */}
+              {matches.map((m) => {
+                const cell = grid[userId]?.[m.id]
 
-              {/* BONUS */}
-              <td className="text-center px-3 py-2">-</td>
-              <td className="text-center px-3 py-2">-</td>
+                return (
+                  <td
+                    key={m.id}
+                    className="text-center px-3 py-2 border-l border-zinc-800 min-w-[110px]"
+                  >
+                    {cell ? (
+                      isMatchStarted(m.match_time) ? (
+                        <>
+                          <div>{cell.prediction}</div>
+                          <div className="font-bold">
+                            {cell.points}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-gray-400">🔒</div>
+                      )
+                    ) : (
+                      <div className="text-gray-400">-</div>
+                    )}
+                  </td>
+                )
+              })}
+
+              {/* BONUS WINNER */}
+              <td className="text-center px-3 py-2 border-l border-zinc-800">
+                {(() => {
+                  const bonus = bonusPredictions.find(
+                    (b) => b.user_id === userId
+                  )
+
+                  const winnerCorrect =
+                    bonus?.predicted_winner === ACTUAL_WINNER
+
+                  return isTournamentStarted() ? (
+                    <>
+                      <div>{bonus?.predicted_winner || "-"}</div>
+                      <div className="font-bold">
+                        {winnerCorrect ? 5 : 0}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-gray-400">🔒</div>
+                  )
+                })()}
+              </td>
+
+              {/* BONUS SCORER */}
+              <td className="text-center px-3 py-2 border-l border-zinc-800">
+                {(() => {
+                  const bonus = bonusPredictions.find(
+                    (b) => b.user_id === userId
+                  )
+
+                  const scorerCorrect =
+                    bonus?.predicted_top_scorer === ACTUAL_TOP_SCORER
+
+                  return isTournamentStarted() ? (
+                    <>
+                      <div>{bonus?.predicted_top_scorer || "-"}</div>
+                      <div className="font-bold">
+                        {scorerCorrect ? 5 : 0}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-gray-400">🔒</div>
+                  )
+                })()}
+              </td>
 
               {/* SUM */}
-              <td className="sticky right-0 z-10 bg-zinc-950 text-white text-center px-3 py-2 font-bold">
-                {totals[uid] || 0}
+              <td className="sticky right-0 z-20 bg-zinc-950 text-center text-white px-3 py-2 font-bold border-l border-zinc-800">
+                {totals[userId] || 0}
               </td>
 
             </tr>
           ))}
         </tbody>
+
       </table>
     </div>
-  )
+  </div>
+)
 }
