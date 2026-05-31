@@ -32,18 +32,18 @@ export default function Navbar() {
         </Link>
 
         <Link href="/matches" className={linkClass("/matches")}>
-          Matches
+          Mecze
         </Link>
 
         <Link href="/leaderboard" className={linkClass("/leaderboard")}>
-          Leaderboard
+          Tabela
         </Link>
 
         <button
           onClick={handleLogout}
           className="text-red-500"
         >
-          Logout
+          Wyloguj
         </button>
 
       </div>

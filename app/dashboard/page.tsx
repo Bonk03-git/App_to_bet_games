@@ -22,11 +22,11 @@ export default function DashboardPage() {
         <Link href="/matches">
           <div className="bg-zinc-900 text-white rounded-2xl shadow p-8 h-44 flex flex-col items-center justify-center text-center hover:scale-105 transition cursor-pointer">
             <h2 className="text-2xl font-bold mb-2 text-white">
-              ⚽ Matches
+              ⚽ Mecze
             </h2>
 
             <p className="text-gray-400">
-              Typowanie meczów i podgląd spotkań
+              Typowanie meczów
             </p>
           </div>
         </Link>
@@ -35,7 +35,7 @@ export default function DashboardPage() {
         <Link href="/leaderboard">
           <div className="bg-zinc-900 text-white rounded-2xl shadow p-8 h-44 flex flex-col items-center justify-center text-center hover:scale-105 transition cursor-pointer">
             <h2 className="text-2xl font-bold mb-2 text-white">
-              🏆 Leaderboard
+              🏆 Tabela
             </h2>
 
             <p className="text-gray-400">

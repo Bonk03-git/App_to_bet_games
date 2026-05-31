@@ -112,7 +112,7 @@ export default function LeaderboardPage() {
       <Navbar />
 
       <div className="p-10">
-        <h1 className="text-3xl font-bold mb-6">🏆 Leaderboard</h1>
+        <h1 className="text-3xl font-bold mb-6">🏆 Ranking</h1>
 
         <LeaderboardGrid />
       </div>

@@ -305,7 +305,7 @@ return (
     </div>
 
     <h1 className="text-3xl font-bold mb-6">
-      Upcoming Matches ⚽
+      Mecze ⚽
     </h1>
 
     <div className="space-y-6">
