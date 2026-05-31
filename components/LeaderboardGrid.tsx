@@ -197,11 +197,11 @@ return (
         </th>
 
         <th className="px-3 py-2 border-l border-zinc-800">
-          Winner
+          Zwycięzca
         </th>
 
         <th className="px-3 py-2 border-l border-zinc-800">
-          Top Scorer
+          Król strzelców
         </th>
 
         {/* MATCHES */}
