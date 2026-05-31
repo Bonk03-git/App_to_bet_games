@@ -183,17 +183,14 @@ export default function LeaderboardGrid() {
   const userWidth = getUserColumnWidth(usersMap)
 
   const gridTemplate =
-    `${userWidth}px repeat(` +
-    matches.length +
-    ", 110px) 120px 120px 90px"
+    `${userWidth}px repeat(${matches.length}, 110px) 120px 120px 90px`
 
   return (
-    <div className="p-4 overflow-x-auto">
-      <div className="overflow-x-auto relative">
+    <div className="p-4 overflow-x-auto w-full scroll-smooth">
       <div className="min-w-max">
       {/* HEADER */}
       <div
-      className="grid font-bold border-b sticky top-0 z-10 items-center text-center justify-center"
+      className="grid font-bold border-b sticky top-0 z-30 items-center text-center"
       style={{ gridTemplateColumns: gridTemplate }}
       >
         <div className="sticky left-0 bg-zinc-950 text-white px-4 flex items-center justify-center whitespace-nowrap h-full">
@@ -236,7 +233,7 @@ export default function LeaderboardGrid() {
           >
 
             {/* USER */}
-            <div className="sticky left-0 bg-zinc-950 text-white px-3 flex items-stretch justify-center text-center shadow-md">
+            <div className="sticky left-0 z-20 bg-zinc-950 text-white px-3 flex items-center justify-center text-center shadow-md border-r border-zinc-800 min-w-[140px]">
               {usersMap[userId].email?.split("@")[0]}
             </div>
 
@@ -247,7 +244,7 @@ export default function LeaderboardGrid() {
               return (
                 <div
                   key={m.id}
-                  className="flex flex-col items-center justify-center text-xs h-full border-l border-white"
+                  className="flex flex-col items-center justify-center text-xs h-full border-l border-white min-w-[110px]"
                 >
                   {cell ? (
                     isMatchStarted(m.match_time) ? (
@@ -291,7 +288,7 @@ export default function LeaderboardGrid() {
                         </div>
                       </>
                     ) : (
-                      <div className="text-gray-400 text-lg">
+                      <div className="text-gray-400">
                         🔒
                       </div>
                     )}
@@ -306,7 +303,7 @@ export default function LeaderboardGrid() {
                         </div>
                       </>
                     ) : (
-                      <div className="text-gray-400 text-lg">
+                      <div className="text-gray-400">
                         🔒
                       </div>
                     )}
@@ -316,13 +313,12 @@ export default function LeaderboardGrid() {
             })()}
 
             {/* TOTAL */}
-            <div className="w-20 sticky right-0 bg-zinc-950 z-30 shadow-md">
+            <div className="sticky right-0 z-20 bg-zinc-950 text-white px-3 flex items-center justify-center border-l border-zinc-800 min-w-[90px]">
               {totals[userId] || 0}
             </div>
 
           </div>
         ))}
-      </div>
       </div>
       </div>
     </div>

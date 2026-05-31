@@ -279,7 +279,7 @@ return (
             className="bg-zinc-800 p-3 rounded-lg"
             defaultValue={bonusPrediction?.predicted_winner || ""}
           >
-            <option value="">Select winner</option>
+            <option value="">Wybierz zwycięzcę</option>
             {WORLD_CUP_COUNTRIES.map((c) => (
               <option key={c} value={c}>
                 {c}
@@ -289,7 +289,7 @@ return (
 
           <input
             id="scorer"
-            placeholder="Top Scorer"
+            placeholder="Król strzelców"
             className="bg-zinc-800 p-3 rounded-lg"
             defaultValue={bonusPrediction?.predicted_top_scorer || ""}
           />
@@ -298,7 +298,7 @@ return (
             onClick={saveBonusPrediction}
             className="bg-yellow-600 hover:bg-yellow-500 transition rounded-lg p-3 font-bold"
           >
-            Save Bonus Predictions
+            Zapisz Bonusowe Predykcje
           </button>
         </div>
       )}
@@ -335,20 +335,20 @@ return (
             {/* TYPOWANIE / BLOKADA */}
             {isMatchStarted(match.match_time) ? (
               <div className="text-red-500 mt-3 font-bold">
-                Typowanie zamknięte ⛔
+                Typowanie zamknięte
               </div>
             ) : (
               <div className="flex gap-2 mt-4 justify-center items-center w-full">
                 <input
                   type="number"
-                  placeholder="Home"
+                  placeholder="Obstaw"
                   className="bg-zinc-800 rounded-lg p-2 w-20 text-white text-center"
                   id={`home-${match.id}`}
                 />
 
                 <input
                   type="number"
-                  placeholder="Away"
+                  placeholder="Obstaw"
                   className="bg-zinc-800 rounded-lg p-2 w-20 text-white text-center"
                   id={`away-${match.id}`}
                 />
@@ -357,7 +357,7 @@ return (
                   className="bg-green-600 hover:bg-green-500 transition rounded-lg px-4 py-2 text-white font-semibold"
                   onClick={() => savePrediction(match.id)}
                 >
-                  Save
+                  Zapisz
                 </button>
               </div>
             )}
