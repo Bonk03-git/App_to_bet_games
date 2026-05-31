@@ -182,154 +182,136 @@ export default function LeaderboardGrid() {
 
   const userWidth = getUserColumnWidth(usersMap)
 
-  const gridTemplate =
-    `${userWidth}px repeat(${matches.length}, 110px) 120px 120px 90px`
-
 return (
-  <div className="p-4 overflow-x-auto w-full">
-    <div className="min-w-max">
+ <div className="w-full overflow-x-auto bg-zinc-950">
 
-      <table className="border-collapse w-full text-xs">
+  <table className="min-w-max border-collapse text-xs w-full">
 
-        {/* HEADER */}
-        <thead>
-          <tr className="bg-zinc-950 text-white sticky top-0 z-30">
+    {/* HEADER */}
+    <thead>
+      <tr className="bg-zinc-950 text-white sticky top-0 z-50">
 
-            {/* USER */}
-            <th className="sticky left-0 z-40 bg-zinc-950 px-4 py-2 text-center border-r border-zinc-800">
-              Gracz
-            </th>
+        {/* USER */}
+        <th className="sticky left-0 z-50 bg-zinc-950 px-4 py-2 text-center border-r border-zinc-800 shadow-md">
+          Gracz
+        </th>
 
-            {/* MATCHES */}
-            {matches.map((m) => (
-              <th
+        <th className="px-3 py-2 border-l border-zinc-800">
+          Winner
+        </th>
+
+        <th className="px-3 py-2 border-l border-zinc-800">
+          Top Scorer
+        </th>
+
+        {/* MATCHES */}
+        {matches.map((m) => (
+          <th
+            key={m.id}
+            className="px-3 py-2 min-w-[110px] border-l border-zinc-800"
+          >
+            <div className="flex flex-col items-center leading-tight">
+              <span className="font-bold">{m.home_team}</span>
+              <span className="text-gray-400 text-[10px]">vs</span>
+              <span className="font-bold">{m.away_team}</span>
+            </div>
+          </th>
+        ))}
+      </tr>
+    </thead>
+
+    {/* BODY */}
+    <tbody>
+      {Object.keys(usersMap).map((userId, i) => (
+        <tr
+          key={userId}
+          className={i % 2 === 0 ? "bg-zinc-950" : "bg-zinc-900/40"}
+        >
+
+          {/* USER */}
+          <td className="sticky left-0 z-40 bg-zinc-950 text-white text-center px-4 py-2 font-medium border-r border-zinc-800 shadow-md">
+            {usersMap[userId].email?.split("@")[0]}
+          </td>
+
+          {/* WINNER */}
+          <td className="text-center px-3 py-2 border-l border-zinc-800">
+            {(() => {
+              const bonus = bonusPredictions.find(
+                (b) => b.user_id === userId
+              )
+
+              const winnerCorrect =
+                bonus?.predicted_winner === ACTUAL_WINNER
+
+              return isTournamentStarted() ? (
+                <>
+                  <div>{bonus?.predicted_winner || "-"}</div>
+                  <div className="font-bold">
+                    {winnerCorrect ? 5 : 0}
+                  </div>
+                </>
+              ) : (
+                <div className="text-gray-400">🔒</div>
+              )
+            })()}
+          </td>
+
+          {/* TOP SCORER */}
+          <td className="text-center px-3 py-2 border-l border-zinc-800">
+            {(() => {
+              const bonus = bonusPredictions.find(
+                (b) => b.user_id === userId
+              )
+
+              const scorerCorrect =
+                bonus?.predicted_top_scorer === ACTUAL_TOP_SCORER
+
+              return isTournamentStarted() ? (
+                <>
+                  <div>{bonus?.predicted_top_scorer || "-"}</div>
+                  <div className="font-bold">
+                    {scorerCorrect ? 5 : 0}
+                  </div>
+                </>
+              ) : (
+                <div className="text-gray-400">🔒</div>
+              )
+            })()}
+          </td>
+
+          {/* MATCHES */}
+          {matches.map((m) => {
+            const cell = grid[userId]?.[m.id]
+
+            return (
+              <td
                 key={m.id}
-                className="px-3 py-2 min-w-[110px] border-l border-zinc-800"
+                className="text-center px-3 py-2 border-l border-zinc-800 min-w-[110px]"
               >
-                <div className="flex flex-col items-center leading-tight">
-                  <span className="font-bold">{m.home_team}</span>
-                  <span className="text-gray-400 text-[10px]">vs</span>
-                  <span className="font-bold">{m.away_team}</span>
-                </div>
-              </th>
-            ))}
-
-            <th className="px-3 py-2 border-l border-zinc-800">
-              Winner
-            </th>
-
-            <th className="px-3 py-2 border-l border-zinc-800">
-              Top Scorer
-            </th>
-
-            {/* SUM */}
-            <th className="sticky right-0 z-40 bg-zinc-950 px-3 py-2 border-l border-zinc-800">
-              SUM
-            </th>
-          </tr>
-        </thead>
-
-        {/* BODY */}
-        <tbody>
-          {Object.keys(usersMap).map((userId, i) => (
-            <tr
-              key={userId}
-              className={
-                i % 2 === 0
-                  ? "bg-zinc-950"
-                  : "bg-zinc-900/40"
-              }
-            >
-
-              {/* USER */}
-              <td className="sticky left-0 z-20 bg-zinc-950 text-white text-center px-4 py-2 font-medium border-r border-zinc-800">
-                {usersMap[userId].email?.split("@")[0]}
-              </td>
-
-              {/* MATCH CELLS */}
-              {matches.map((m) => {
-                const cell = grid[userId]?.[m.id]
-
-                return (
-                  <td
-                    key={m.id}
-                    className="text-center px-3 py-2 border-l border-zinc-800 min-w-[110px]"
-                  >
-                    {cell ? (
-                      isMatchStarted(m.match_time) ? (
-                        <>
-                          <div>{cell.prediction}</div>
-                          <div className="font-bold">
-                            {cell.points}
-                          </div>
-                        </>
-                      ) : (
-                        <div className="text-gray-400">🔒</div>
-                      )
-                    ) : (
-                      <div className="text-gray-400">-</div>
-                    )}
-                  </td>
-                )
-              })}
-
-              {/* BONUS WINNER */}
-              <td className="text-center px-3 py-2 border-l border-zinc-800">
-                {(() => {
-                  const bonus = bonusPredictions.find(
-                    (b) => b.user_id === userId
-                  )
-
-                  const winnerCorrect =
-                    bonus?.predicted_winner === ACTUAL_WINNER
-
-                  return isTournamentStarted() ? (
+                {cell ? (
+                  isMatchStarted(m.match_time) ? (
                     <>
-                      <div>{bonus?.predicted_winner || "-"}</div>
+                      <div>{cell.prediction}</div>
                       <div className="font-bold">
-                        {winnerCorrect ? 5 : 0}
+                        {cell.points}
                       </div>
                     </>
                   ) : (
                     <div className="text-gray-400">🔒</div>
                   )
-                })()}
+                ) : (
+                  <div className="text-gray-400">-</div>
+                )}
               </td>
+            )
+          })}
 
-              {/* BONUS SCORER */}
-              <td className="text-center px-3 py-2 border-l border-zinc-800">
-                {(() => {
-                  const bonus = bonusPredictions.find(
-                    (b) => b.user_id === userId
-                  )
+        </tr>
+      ))}
+    </tbody>
 
-                  const scorerCorrect =
-                    bonus?.predicted_top_scorer === ACTUAL_TOP_SCORER
+  </table>
 
-                  return isTournamentStarted() ? (
-                    <>
-                      <div>{bonus?.predicted_top_scorer || "-"}</div>
-                      <div className="font-bold">
-                        {scorerCorrect ? 5 : 0}
-                      </div>
-                    </>
-                  ) : (
-                    <div className="text-gray-400">🔒</div>
-                  )
-                })()}
-              </td>
-
-              {/* SUM */}
-              <td className="sticky right-0 z-20 bg-zinc-950 text-center text-white px-3 py-2 font-bold border-l border-zinc-800">
-                {totals[userId] || 0}
-              </td>
-
-            </tr>
-          ))}
-        </tbody>
-
-      </table>
-    </div>
-  </div>
+</div>
 )
 }

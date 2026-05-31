@@ -107,15 +107,46 @@ export default function LeaderboardPage() {
     return <div className="p-10">Loading...</div>
   }
 
-  return (
-    <div>
-      <Navbar />
+return (
+  <div>
+    <Navbar />
 
-      <div className="p-10">
-        <h1 className="text-3xl font-bold mb-6">🏆 Ranking</h1>
+    <div className="p-10 space-y-10">
 
-        <LeaderboardGrid />
+      {/* 🔝 SIMPLE LEADERBOARD */}
+      <div className="bg-zinc-900 rounded-2xl p-6">
+        <h2 className="text-xl font-bold mb-4">
+          🏆 Ranking (suma punktów)
+        </h2>
+
+        <div className="space-y-2">
+          {board.map((user, index) => (
+            <div
+              key={user.user_id}
+              className="flex justify-between items-center bg-zinc-800 px-4 py-2 rounded-lg"
+            >
+              <div className="flex gap-3 items-center">
+                <span className="text-gray-400 w-6">
+                  {index + 1}.
+                </span>
+
+                <span className="font-medium">
+                  {user.email.split("@")[0]}
+                </span>
+              </div>
+
+              <div className="font-bold text-white">
+                {user.points}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
+
+      {/* ⬇️ EXISTING GRID */}
+      <LeaderboardGrid />
+
     </div>
-  )
+  </div>
+)
 }
