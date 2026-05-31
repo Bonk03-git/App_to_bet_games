@@ -14,7 +14,45 @@ export default function DashboardPage() {
 
     <div className="p-10">
 
+      <div className="bg-zinc-900 text-white rounded-2xl p-6 mt-6 shadow">
 
+        <h2 className="text-xl font-bold mb-3">
+          Jak działa aplikacja?
+        </h2>
+
+        <div className="space-y-3 text-sm text-gray-300">
+
+          <p>
+            Każdy użytkownik typuje wyniki meczów przed ich rozpoczęciem.
+          </p>
+
+          <p>
+            Punktacja:
+            <br />• 3 pkt – dokładny wynik
+            <br />• 1 pkt – poprawny wynik (wygrana/remis/przegrana)
+          </p>
+
+          <p>
+            Dodatkowo można typować:
+            <br />• zwycięzcę turnieju
+            <br />• króla strzelców
+            <br />→ po 5 pkt za trafienie
+          </p>
+
+          <p>
+            Ranking aktualizuje się po wpisaniu przez administratora prawidłowych wyników meczu.
+          </p>
+
+          <p className="text-yellow-400 font-medium">
+            ⚠️ Użytkownik pojawia się w tabeli dopiero po oddaniu pierwszego typu.
+          </p>
+
+          <p>
+            Zakładka mecze odpowiada za typowanie wyników, natomiast tabela to miejsce, gdzie można śledzić aktualny ranking, punkty innych graczy oraz ich typy            (typy widoczne są po rozpoczęciu meczu).
+          </p>
+
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
 
