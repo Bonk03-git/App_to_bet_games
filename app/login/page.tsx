@@ -61,7 +61,7 @@ export default function LoginPage() {
         }}
         className="bg-blue-600 hover:bg-blue-500 transition text-white p-2 rounded-lg"
       >
-        {loading ? "Loading..." : "Login"}
+        {loading ? "Loading..." : "Zaloguj się"}
       </button>
 
       {/* REGISTER */}
@@ -81,7 +81,7 @@ export default function LoginPage() {
         }}
         className="bg-green-600 hover:bg-green-500 transition text-white p-2 rounded-lg"
       >
-        Register
+        Stwórz konto
     </button>
 
     {error && (
