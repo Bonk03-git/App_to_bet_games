@@ -23,20 +23,25 @@ export default function DashboardPage() {
         <div className="space-y-3 text-sm text-gray-300">
 
           <p>
-            Każdy użytkownik typuje wyniki meczów przed ich rozpoczęciem.
+            Każdy użytkownik typuje wyniki meczów przed ich rozpoczęciem. W przypadku meczy drabinkowych obstawiamy pierwsze 90 minut, nie uwzględniamy ewentualnej dogrywki!!!
           </p>
 
           <p>
             Punktacja:
-            <br />• 3 pkt – dokładny wynik
-            <br />• 1 pkt – poprawny wynik (wygrana/remis/przegrana)
+            <br />• 3 pkt – poprawny wynik
+            <br />• 1 pkt – poprawny zwycięzca (wygrana/remis/przegrana)
           </p>
 
           <p>
-            Dodatkowo można typować:
-            <br />• zwycięzcę turnieju
-            <br />• króla strzelców
+            Przed pierwszym meczem jest możliwość obstawienia:
+            <br />• zwycięzcy turnieju
+            <br />• króla strzelców (należy wpisać nazwisko i imię zawodnika, np. "Kylian Mbappe")
             <br />→ po 5 pkt za trafienie
+          </p>
+
+          <p>
+            Prawidłowo obstawiony wynik, zostaje potwierzony przez informację nad danym meczem "Twój typ:". Jeżeli się nie pojawia, coś poszło nie tak.
+            W zakładce mecze należy obstawić wynik przed rozpoczęciem meczu, a w tabeli można śledzić aktualny ranking, punkty innych graczy oraz ich typy (typy widoczne są po rozpoczęciu meczu).
           </p>
 
           <p>
@@ -48,7 +53,7 @@ export default function DashboardPage() {
           </p>
 
           <p>
-            Zakładka mecze odpowiada za typowanie wyników, natomiast tabela to miejsce, gdzie można śledzić aktualny ranking, punkty innych graczy oraz ich typy            (typy widoczne są po rozpoczęciu meczu).
+            Powodzenia i miłej zabawy!
           </p>
 
         </div>
