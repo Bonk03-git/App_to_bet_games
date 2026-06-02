@@ -41,6 +41,10 @@ export default function DashboardPage() {
 
           <p>
             Prawidłowo obstawiony wynik, zostaje potwierzony przez informację nad danym meczem "Twój typ:". Jeżeli się nie pojawia, coś poszło nie tak.
+           </p>
+
+          <p>
+           
             W zakładce mecze należy obstawić wynik przed rozpoczęciem meczu, a w tabeli można śledzić aktualny ranking, punkty innych graczy oraz ich typy (typy widoczne są po rozpoczęciu meczu).
           </p>
 
