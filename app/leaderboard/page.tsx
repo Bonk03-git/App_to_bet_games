@@ -10,6 +10,7 @@ interface Row {
   user_id: string
   email: string
   points: number
+  exactHits: number
 }
 
 export default function LeaderboardPage() {
@@ -61,10 +62,14 @@ export default function LeaderboardPage() {
         .from("matches")
         .select("*")
 
-      const pointsMap: Record<
-        string,
-        { points: number; email: string }
-      > = {}
+    const pointsMap: Record<
+      string,
+      {
+        points: number
+        email: string
+        exactHits: number
+      }
+    > = {}
 
       let points = 0
 
@@ -83,19 +88,30 @@ export default function LeaderboardPage() {
           pointsMap[p.user_id] = {
             points: 0,
             email: p.user_email || "",
+            exactHits: 0
           }
         }
 
         pointsMap[p.user_id].points += pPoints
+        if (pPoints === 3) {
+          pointsMap[p.user_id].exactHits += 1
+        }
       })
 
       const result = Object.entries(pointsMap).map(([user_id, value]) => ({
         user_id,
         points: value.points,
         email: value.email,
+        exactHits: value.exactHits,
       }))
 
-      result.sort((a, b) => b.points - a.points)
+      result.sort((a, b) => {
+        if (b.points !== a.points) {
+          return b.points - a.points
+        }
+
+        return b.exactHits - a.exactHits
+      })
 
       setBoard(result)
     }
@@ -135,8 +151,16 @@ return (
                 </span>
               </div>
 
-              <div className="font-bold text-white">
-                {user.points}
+              <div className="flex gap-4 items-center">
+
+                <div className="font-bold text-white">
+                  {user.points} pkt
+                </div>
+
+                <div className="text-xs text-gray-400">
+                  {user.exactHits} 🎯
+                </div>
+                
               </div>
             </div>
           ))}

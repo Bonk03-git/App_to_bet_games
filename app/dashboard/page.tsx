@@ -40,12 +40,18 @@ export default function DashboardPage() {
           </p>
 
           <p>
-            Prawidłowo obstawiony wynik, zostaje potwierzony przez informację nad danym meczem "Twój typ:". Jeżeli się nie pojawia, coś poszło nie tak.
+            Kto zostaje zwycięzcą turnieju?
+            <br />• Zwycięzcą zostaje osoba z największą ilością wszystkich punktów
+            <br />• W przypadku remisu decyduje ilość trafionych wyników (3 pkt). 
+            <br />• Jeżeli dalej będzie remis wówczas uczestnicy dzielą miejsce ex aequo.
+          </p>
+
+          <p>
+            Prawidłowo obstawiony wynik, zostaje potwierdzony przez informację nad danym meczem "Twój typ:". Jeżeli informacja się nie pojawia, coś poszło nie tak.
            </p>
 
           <p>
-           
-            W zakładce mecze należy obstawić wynik przed rozpoczęciem meczu, a w tabeli można śledzić aktualny ranking, punkty innych graczy oraz ich typy (typy widoczne są po rozpoczęciu meczu).
+            W zakładce "MECZE" należy obstawić wynik przed rozpoczęciem meczu, a w zakładce "TABELA" można śledzić aktualny ranking, punkty innych graczy oraz ich typy (typy widoczne są po rozpoczęciu meczu).
           </p>
 
           <p>
