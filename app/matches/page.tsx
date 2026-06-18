@@ -141,6 +141,12 @@ export default function MatchesPage() {
   const savePrediction = async (matchId: string) => {
     const home = (document.getElementById(`home-${matchId}`) as HTMLInputElement).value
     const away = (document.getElementById(`away-${matchId}`) as HTMLInputElement).value
+
+    if (home.trim() === "" || away.trim() === "") {
+    alert("Proszę uzupełnić oba wyniki przed zapisaniem!")
+    return
+  }
+
     const userEmail = user?.email
 
   const { data, error } = await supabase
