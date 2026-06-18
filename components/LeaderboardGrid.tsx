@@ -218,6 +218,31 @@ return (
           </th>
         ))}
       </tr>
+
+      {/* NOWY WIERSZ: RZECZYWISTE WYNIKI */}
+      <tr className="bg-zinc-900 text-yellow-500 border-b border-zinc-800">
+        {/* Puste komórki dla kolumn gracza i bonusów, żeby zachować układ */}
+        <td className="sticky left-0 z-40 bg-zinc-900 text-center font-semibold px-4 py-1.5 border-r border-zinc-800 shadow-md">
+          Wynik
+        </td>
+        <td className="border-l border-zinc-800"></td>
+        <td className="border-l border-zinc-800"></td>
+
+        {/* Mapowanie wyników dla każdego meczu */}
+        {matches.map((m) => (
+          <td
+            key={`score-${m.id}`}
+            className="text-center font-bold px-3 py-1.5 border-l border-zinc-800 text-sm"
+          >
+            {m.home_score !== null && m.away_score !== null ? (
+              <span>{m.home_score} - {m.away_score}</span>
+            ) : (
+              <span className="text-gray-500 font-normal">-</span>
+            )}
+          </td>
+        ))}
+      </tr>
+
     </thead>
 
     {/* BODY */}
