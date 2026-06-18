@@ -304,9 +304,19 @@ return (
             })()}
           </td>
 
-          {/* MATCHES */}
+{/* MATCHES */}
           {matches.map((m) => {
             const cell = grid[userId]?.[m.id]
+
+            // Dynamiczne kolorowanie samej czcionki dla punktów
+            let pointsColorClass = "text-gray-500 bg-zinc-800" // Domyślnie dla 0 pkt
+            if (cell && isMatchStarted(m.match_time)) {
+              if (cell.points === 3) {
+                pointsColorClass = "text-green-400 bg-green-950/60 font-bold border border-green-500/30" // 3 pkt
+              } else if (cell.points === 1) {
+                pointsColorClass = "text-yellow-500 bg-yellow-950/50 font-semibold border border-yellow-500/20" // 1 pkt
+              }
+            }
 
             return (
               <td
@@ -315,12 +325,17 @@ return (
               >
                 {cell ? (
                   isMatchStarted(m.match_time) ? (
-                    <>
-                      <div>{cell.prediction}</div>
-                      <div className="font-bold">
-                        {cell.points}
+                    <div className="flex flex-col items-center justify-center gap-1">
+                      {/* Ładne, wyraźne formatowanie typowanego wyniku */}
+                      <div className="font-bold text-zinc-200 text-sm tracking-wider">
+                        {cell.prediction}
                       </div>
-                    </>
+                      
+                      {/* Kolorowany indykator punktów */}
+                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] ${pointsColorClass}`}>
+                        {cell.points} pkt
+                      </span>
+                    </div>
                   ) : (
                     <div className="text-gray-400">🔒</div>
                   )
