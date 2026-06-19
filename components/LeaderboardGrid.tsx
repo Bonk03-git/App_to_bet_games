@@ -193,15 +193,11 @@ export default function LeaderboardGrid() {
               <tr key={userId} className={rowBgClass}>
                 {/* USER - tylko tekst wewnątrz tej komórki reaguje na to, czy to Ty */}
                 <td className="sticky left-0 z-40 bg-zinc-950 text-center px-4 py-2 font-medium border-r border-zinc-800 shadow-md">
-                  {isCurrentUser ? (
-                    <span className="text-green-300 font-bold tracking-wide">
-                      {usersMap[userId].email?.split("@")[0]}
-                    </span>
-                  ) : (
+                  {
                     <span className="text-white">
                       {usersMap[userId].email?.split("@")[0]}
                     </span>
-                  )}
+                  }
                 </td>
 
                 {/* WINNER */}

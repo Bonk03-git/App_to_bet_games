@@ -10,9 +10,14 @@ export function useRequireAuth() {
 
   useEffect(() => {
     const checkUser = async () => {
-      const { data } = await supabase.auth.getUser()
+      const { data, error } = await supabase.auth.getUser()
 
-      if (!data.user) {
+      // Jeśli serwer zwróci błąd lub użytkownik nie istnieje w bazie (został usunięty):
+      if (error || !data.user) {
+        // Kluczowy krok: Czyścimy nieaktywną sesję w Local Storage przeglądarki
+        await supabase.auth.signOut()
+        
+        // Używamy replace, aby użytkownik nie mógł "wrócić" przyciskiem wstecz do pętli
         router.replace("/login")
         return
       }
