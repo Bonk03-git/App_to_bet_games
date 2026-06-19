@@ -186,15 +186,22 @@ export default function LeaderboardGrid() {
           {sortedUserIds.map((userId, i) => {
             const isCurrentUser = userId === currentUserId
 
-            const rowBgClass = (i % 2 === 0 ? "bg-zinc-950" : "bg-zinc-900/40")
-
-            const stickyCellBgClass = "bg-zinc-950"
+            // Przywrócono standardową zebrę dla wszystkich wierszy (bez wyjątków)
+            const rowBgClass = i % 2 === 0 ? "bg-zinc-950" : "bg-zinc-900/40"
 
             return (
               <tr key={userId} className={rowBgClass}>
-                {/* USER */}
-                <td className={`sticky left-0 z-40 ${stickyCellBgClass} text-white text-center px-4 py-2 font-medium border-r border-zinc-800 shadow-md`}>
-                  {usersMap[userId].email?.split("@")[0]}
+                {/* USER - tylko tekst wewnątrz tej komórki reaguje na to, czy to Ty */}
+                <td className="sticky left-0 z-40 bg-zinc-950 text-center px-4 py-2 font-medium border-r border-zinc-800 shadow-md">
+                  {isCurrentUser ? (
+                    <span className="text-green-300 font-bold tracking-wide">
+                      {usersMap[userId].email?.split("@")[0]}
+                    </span>
+                  ) : (
+                    <span className="text-white">
+                      {usersMap[userId].email?.split("@")[0]}
+                    </span>
+                  )}
                 </td>
 
                 {/* WINNER */}
