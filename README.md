@@ -1,4 +1,4 @@
 ### OPIS PROJEKTU
-Widok działającej strony znajduje się pod linkiem: https://app-to-bet-games.vercel.app/
+Stronka do obstawiania wyników meczy na mistrzostwach piłki nożnej
 
 (dokładne działanie i sposób z korzystania jest opisany lokalnie)
