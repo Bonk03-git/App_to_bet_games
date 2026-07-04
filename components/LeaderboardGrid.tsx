@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { supabase } from "@/lib/supabase"
 
 type Match = {
@@ -56,6 +56,8 @@ export default function LeaderboardGrid() {
   const [bonusPredictions, setBonusPredictions] = useState<BonusPrediction[]>([])
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
+  const matchRefs = useRef<Record<string, HTMLTableCellElement | null>>({})
+
   const isMatchStarted = (matchTime: string) => {
     return new Date() >= new Date(matchTime)
   }
@@ -92,6 +94,35 @@ export default function LeaderboardGrid() {
 
     fetchData()
   }, [])
+
+  useEffect(() => {
+    if (!matches.length) return
+
+    const now = new Date()
+
+    let targetMatch = matches[0]
+
+    matches.forEach((match) => {
+      if (new Date(match.match_time) <= now) {
+        targetMatch = match
+      }
+    })
+
+    setTimeout(() => {
+      const el = matchRefs.current[targetMatch.id]
+      if (!el) return
+
+      const container = el.closest(".overflow-x-auto") as HTMLElement | null
+      if (!container) return
+
+      const offset = 120 // <- tu ustawiasz offset od lewej dla automatycznego przewijania
+
+      container.scrollTo({
+        left: el.offsetLeft - offset,
+        behavior: "smooth",
+      })
+    }, 100)
+  }, [matches])
 
   const gridData = useMemo(() => {
     const usersMap: Record<string, { email: string }> = {}
@@ -151,7 +182,13 @@ export default function LeaderboardGrid() {
             <th className="px-3 py-2 border-l border-zinc-800">Król strzelców</th>
 
             {matches.map((m) => (
-              <th key={m.id} className="px-3 py-2 min-w-[110px] border-l border-zinc-800">
+                <th
+                  key={m.id}
+                  ref={(el) => {
+                    matchRefs.current[m.id] = el
+                  }}
+                  className="px-3 py-2 min-w-[110px] border-l border-zinc-800"
+                >
                 <div className="flex flex-col items-center leading-tight">
                   <span className="font-bold">{m.home_team}</span>
                   <span className="text-gray-400 text-[10px]">vs</span>
