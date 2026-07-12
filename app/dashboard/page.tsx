@@ -35,7 +35,7 @@ export default function DashboardPage() {
           <p>
             Przed pierwszym meczem jest możliwość obstawienia:
             <br />• zwycięzcy turnieju
-            <br />• króla strzelców (należy wpisać nazwisko i imię zawodnika, np. "Kylian Mbappe")
+            <br />• zwycięzce złotego buta - króla strzelców (należy wpisać nazwisko i imię zawodnika, np. "Kylian Mbappe")
             <br />→ po 5 pkt za trafienie
           </p>
 
