@@ -39,6 +39,10 @@ export default function Navbar() {
           Tabela
         </Link>
 
+        <Link href="/progress" className={linkClass("/progress")}>
+          Przebieg
+        </Link>
+
         <button
           onClick={handleLogout}
           className="text-red-500"
