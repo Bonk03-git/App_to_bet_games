@@ -47,8 +47,8 @@ const getPoints = (
   return pred === actual ? 1 : 0
 }
 
-const ACTUAL_WINNER = "" 
-const ACTUAL_TOP_SCORER = "" 
+const ACTUAL_WINNER = "Hiszpania" 
+const ACTUAL_TOP_SCORER = "Kylian Mbappe" 
 
 export default function LeaderboardGrid() {
   const [matches, setMatches] = useState<Match[]>([])
