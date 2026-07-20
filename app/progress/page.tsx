@@ -39,8 +39,8 @@ type BonusPrediction = {
 }
 
 // UWAGA: te same stałe co w LeaderboardGrid.tsx — uzupełnij po zakończeniu turnieju
-const ACTUAL_WINNER = "Hiszpania"
-const ACTUAL_TOP_SCORER = "Kylian Mbappe"
+const ACTUAL_WINNER: string = "Hiszpania"
+const ACTUAL_TOP_SCORER: string = "Kylian Mbappe"
 
 const getPoints = (
   ph: number,
