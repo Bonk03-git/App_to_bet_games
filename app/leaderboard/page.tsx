@@ -11,7 +11,12 @@ interface Row {
   email: string
   points: number
   exactHits: number
+  rank: number
 }
+
+// Te same wartości powinny być zsynchronizowane z LeaderboardGrid.tsx
+const ACTUAL_WINNER = "Hiszpania"
+const ACTUAL_TOP_SCORER = "Kylian Mbappe"
 
 export default function LeaderboardPage() {
   const { loading } = useRequireAuth()
@@ -22,7 +27,7 @@ export default function LeaderboardPage() {
   const nickname = (email: string) => {
     return email?.split("@")[0]
   }
-  
+
   const calculatePoints = (
     predHome: number,
     predAway: number,
@@ -54,6 +59,28 @@ export default function LeaderboardPage() {
     return 0
   }
 
+  // NOWOŚĆ: nadawanie wspólnego miejsca przy remisie (te same punkty i te same celne trafienia)
+  // np. 1, 2, 2, 4, 5 zamiast 1, 2, 3, 4, 5
+  const assignRanks = (
+    sorted: { user_id: string; email: string; points: number; exactHits: number }[]
+  ): Row[] => {
+    const result: Row[] = []
+
+    sorted.forEach((entry, i) => {
+      const prev = result[i - 1]
+      const isTie =
+        prev !== undefined &&
+        entry.points === sorted[i - 1].points &&
+        entry.exactHits === sorted[i - 1].exactHits
+
+      const rank = isTie ? prev.rank : i + 1
+
+      result.push({ ...entry, rank })
+    })
+
+    return result
+  }
+
   useEffect(() => {
     if (loading) return
 
@@ -70,6 +97,10 @@ export default function LeaderboardPage() {
 
       const { data: matches } = await supabase
         .from("matches")
+        .select("*")
+
+      const { data: bonusPredictions } = await supabase
+        .from("bonus_predictions")
         .select("*")
 
       const pointsMap: Record<
@@ -106,21 +137,39 @@ export default function LeaderboardPage() {
         }
       })
 
-      const result = Object.entries(pointsMap).map(([user_id, value]) => ({
-        user_id,
-        points: value.points,
-        email: value.email,
-        exactHits: value.exactHits,
-      }))
-
-      result.sort((a, b) => {
-        if (b.points !== a.points) {
-          return b.points - a.points
+      // doliczenie punktów bonusowych (zwycięzca turnieju + król strzelców)
+      bonusPredictions?.forEach((b) => {
+        if (!pointsMap[b.user_id]) {
+          pointsMap[b.user_id] = {
+            points: 0,
+            email: b.user_email || "",
+            exactHits: 0
+          }
         }
-        return b.exactHits - a.exactHits
+
+        if (b.predicted_winner === ACTUAL_WINNER) {
+          pointsMap[b.user_id].points += 5
+        }
+        if (b.predicted_top_scorer === ACTUAL_TOP_SCORER) {
+          pointsMap[b.user_id].points += 5
+        }
       })
 
-      setBoard(result)
+      const sorted = Object.entries(pointsMap)
+        .map(([user_id, value]) => ({
+          user_id,
+          points: value.points,
+          email: value.email,
+          exactHits: value.exactHits,
+        }))
+        .sort((a, b) => {
+          if (b.points !== a.points) {
+            return b.points - a.points
+          }
+          return b.exactHits - a.exactHits
+        })
+
+      setBoard(assignRanks(sorted))
     }
 
     fetchData()
@@ -143,7 +192,7 @@ export default function LeaderboardPage() {
           </h2>
 
           <div className="space-y-2">
-            {board.map((user, index) => {
+            {board.map((user) => {
               const isCurrentUser = user.user_id === currentUserId
 
               // NOWOŚĆ: Jeśli to zalogowany użytkownik, kafelek zmienia kolor z bg-zinc-800 na bg-zinc-700/80 i dostaje delikatną ramkę
@@ -158,11 +207,11 @@ export default function LeaderboardPage() {
                 >
                   <div className="flex gap-3 items-center">
                     <span className={"text-gray-400 w-6"}>
-                      {index + 1}.
+                      {user.rank}.
                     </span>
 
                     <span className={`font-medium text-white`}>
-                      {user.email.split("@")[0]}
+                      {nickname(user.email)}
                     </span>
                   </div>
 

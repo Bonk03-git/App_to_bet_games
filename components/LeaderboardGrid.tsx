@@ -47,6 +47,14 @@ const getPoints = (
   return pred === actual ? 1 : 0
 }
 
+// Kafelek z punktami w stylu identycznym jak przy meczach
+const bonusPointsColorClass = (points: number) => {
+  if (points === 5) {
+    return "text-green-400 bg-green-950/60 font-bold border border-green-500/30"
+  }
+  return "text-gray-500 bg-zinc-800"
+}
+
 const ACTUAL_WINNER = "Hiszpania" 
 const ACTUAL_TOP_SCORER = "Kylian Mbappe" 
 
@@ -238,35 +246,53 @@ export default function LeaderboardGrid() {
                 </td>
 
                 {/* WINNER */}
-                <td className="text-center px-3 py-2 border-l border-zinc-800">
+                <td className="text-center px-3 py-2 border-l border-zinc-800 min-w-[110px]">
                   {(() => {
                     const bonus = bonusPredictions.find((b) => b.user_id === userId)
                     const winnerCorrect = bonus?.predicted_winner === ACTUAL_WINNER
+                    const points = winnerCorrect ? 5 : 0
 
-                    return isTournamentStarted() ? (
-                      <>
-                        <div>{bonus?.predicted_winner || "-"}</div>
-                        <div className="font-bold">{winnerCorrect ? 5 : 0}</div>
-                      </>
+                    if (!isTournamentStarted()) {
+                      return <div className="text-gray-400">🔒</div>
+                    }
+
+                    return bonus?.predicted_winner ? (
+                      <div className="flex flex-col items-center justify-center gap-1">
+                        <div className="font-bold text-zinc-200 text-sm tracking-wider">
+                          {bonus.predicted_winner}
+                        </div>
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] ${bonusPointsColorClass(points)}`}>
+                          {points} pkt
+                        </span>
+                      </div>
                     ) : (
-                      <div className="text-gray-400">🔒</div>
+                      <div className="text-gray-400">-</div>
                     )
                   })()}
                 </td>
 
                 {/* TOP SCORER */}
-                <td className="text-center px-3 py-2 border-l border-zinc-800">
+                <td className="text-center px-3 py-2 border-l border-zinc-800 min-w-[110px]">
                   {(() => {
                     const bonus = bonusPredictions.find((b) => b.user_id === userId)
                     const scorerCorrect = bonus?.predicted_top_scorer === ACTUAL_TOP_SCORER
+                    const points = scorerCorrect ? 5 : 0
 
-                    return isTournamentStarted() ? (
-                      <>
-                        <div>{bonus?.predicted_top_scorer || "-"}</div>
-                        <div className="font-bold">{scorerCorrect ? 5 : 0}</div>
-                      </>
+                    if (!isTournamentStarted()) {
+                      return <div className="text-gray-400">🔒</div>
+                    }
+
+                    return bonus?.predicted_top_scorer ? (
+                      <div className="flex flex-col items-center justify-center gap-1">
+                        <div className="font-bold text-zinc-200 text-sm tracking-wider">
+                          {bonus.predicted_top_scorer}
+                        </div>
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] ${bonusPointsColorClass(points)}`}>
+                          {points} pkt
+                        </span>
+                      </div>
                     ) : (
-                      <div className="text-gray-400">🔒</div>
+                      <div className="text-gray-400">-</div>
                     )
                   })()}
                 </td>
