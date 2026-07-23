@@ -227,13 +227,13 @@ export default function MatchesPage() {
     return predictions.find((p) => p.match_id === matchId)
   }
 
-const sortedMatches = [...matches].sort((a, b) => {
-  const aStarted = new Date() >= new Date(a.match_time)
-  const bStarted = new Date() >= new Date(b.match_time)
-
-  // NIE rozpoczęte idą wyżej
-  return Number(aStarted) - Number(bStarted)
-})
+  // Mecze, które się jeszcze nie rozpoczęły - te już wystartowane są całkowicie usuwane z listy
+  const upcomingMatches = matches
+    .filter((m) => !isMatchStarted(m.match_time))
+    .sort(
+      (a, b) =>
+        new Date(a.match_time).getTime() - new Date(b.match_time).getTime()
+    )
 
 return (
   <div>
@@ -315,7 +315,13 @@ return (
     </h1>
 
     <div className="space-y-6">
-      {sortedMatches.map((match) => {
+      {upcomingMatches.length === 0 && (
+        <div className="text-gray-400 text-center">
+          Brak nadchodzących meczów do obstawienia.
+        </div>
+      )}
+
+      {upcomingMatches.map((match) => {
         const pred = predictions.find(
           (p) => p.match_id === match.id
         )
@@ -338,35 +344,29 @@ return (
               </div>
             )}
 
-            {/* TYPOWANIE / BLOKADA */}
-            {isMatchStarted(match.match_time) ? (
-              <div className="text-red-500 mt-3 font-bold">
-                Typowanie zamknięte
-              </div>
-            ) : (
-              <div className="flex gap-2 mt-4 justify-center items-center w-full">
-                <input
-                  type="number"
-                  placeholder="Obstaw"
-                  className="bg-zinc-800 rounded-lg p-2 w-20 text-white text-center"
-                  id={`home-${match.id}`}
-                />
+            {/* TYPOWANIE - mecz na tej liście zawsze jest jeszcze nierozpoczęty */}
+            <div className="flex gap-2 mt-4 justify-center items-center w-full">
+              <input
+                type="number"
+                placeholder="Obstaw"
+                className="bg-zinc-800 rounded-lg p-2 w-20 text-white text-center"
+                id={`home-${match.id}`}
+              />
 
-                <input
-                  type="number"
-                  placeholder="Obstaw"
-                  className="bg-zinc-800 rounded-lg p-2 w-20 text-white text-center"
-                  id={`away-${match.id}`}
-                />
+              <input
+                type="number"
+                placeholder="Obstaw"
+                className="bg-zinc-800 rounded-lg p-2 w-20 text-white text-center"
+                id={`away-${match.id}`}
+              />
 
-                <button
-                  className="bg-green-600 hover:bg-green-500 transition rounded-lg px-4 py-2 text-white font-semibold"
-                  onClick={() => savePrediction(match.id)}
-                >
-                  Zapisz
-                </button>
-              </div>
-            )}
+              <button
+                className="bg-green-600 hover:bg-green-500 transition rounded-lg px-4 py-2 text-white font-semibold"
+                onClick={() => savePrediction(match.id)}
+              >
+                Zapisz
+              </button>
+            </div>
 
           </div>
         )

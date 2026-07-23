@@ -30,31 +30,14 @@ type Prediction = {
   match_id: string
   predicted_home_score: number
   predicted_away_score: number
+  points: number
 }
 
 type BonusPrediction = {
   user_id: string
   predicted_winner: string
   predicted_top_scorer: string
-}
-
-// UWAGA: te same stałe co w LeaderboardGrid.tsx — uzupełnij po zakończeniu turnieju
-const ACTUAL_WINNER: string = "Hiszpania"
-const ACTUAL_TOP_SCORER: string = "Kylian Mbappe"
-
-const getPoints = (
-  ph: number,
-  pa: number,
-  ah: number,
-  aa: number
-) => {
-  if (ah == null || aa == null) return 0
-  if (ph === ah && pa === aa) return 3
-
-  const pred = ph > pa ? "H" : ph < pa ? "A" : "D"
-  const actual = ah > aa ? "H" : ah < aa ? "A" : "D"
-
-  return pred === actual ? 1 : 0
+  points: number
 }
 
 const COLORS = [
@@ -101,6 +84,7 @@ export default function ProgressPage() {
   const [matches, setMatches] = useState<Match[]>([])
   const [predictions, setPredictions] = useState<Prediction[]>([])
   const [bonusPredictions, setBonusPredictions] = useState<BonusPrediction[]>([])
+  const [bonusResultReady, setBonusResultReady] = useState(false)
 
   const [selectedPointsUser, setSelectedPointsUser] = useState<string | null>(null)
   const [selectedRankUser, setSelectedRankUser] = useState<string | null>(null)
@@ -122,9 +106,17 @@ export default function ProgressPage() {
         .from("bonus_predictions")
         .select("*")
 
+      // Wynik bonusowy - jeśli oba pola są wpisane, turniej jest "rozstrzygnięty"
+      const { data: bonusResultData } = await supabase
+        .from("bonus_results")
+        .select("winner, top_scorer")
+        .eq("id", 1)
+        .single()
+
       setMatches(matchesData || [])
       setPredictions(predsData || [])
       setBonusPredictions(bonusData || [])
+      setBonusResultReady(!!(bonusResultData?.winner && bonusResultData?.top_scorer))
     }
 
     fetchData()
@@ -137,7 +129,6 @@ export default function ProgressPage() {
         usersMap[p.user_id] = p.user_email?.split("@")[0] || p.user_id
       }
     })
-    // gdyby ktoś obstawił tylko bonus, a nie typował meczów, i tak chcemy go uwzględnić
     bonusPredictions.forEach((b) => {
       if (!usersMap[b.user_id]) {
         usersMap[b.user_id] = b.user_id
@@ -197,14 +188,9 @@ export default function ProgressPage() {
       predictions
         .filter((p) => p.match_id === m.id)
         .forEach((p) => {
-          const pts = getPoints(
-            Number(p.predicted_home_score),
-            Number(p.predicted_away_score),
-            m.home_score as number,
-            m.away_score as number
-          )
-          cumulative[p.user_id] = (cumulative[p.user_id] || 0) + pts
-          if (pts === 3) {
+          // punkty już policzone triggerem w bazie
+          cumulative[p.user_id] = (cumulative[p.user_id] || 0) + p.points
+          if (p.points === 3) {
             cumulativeExactHits[p.user_id] = (cumulativeExactHits[p.user_id] || 0) + 1
           }
         })
@@ -225,18 +211,12 @@ export default function ProgressPage() {
       )
     })
 
-// DODATKOWY PUNKT KOŃCOWY: bonus za zwycięzcę + króla strzelców
-    // pojawia się dopiero, gdy oba wyniki są znane
-    const tournamentFinished = ACTUAL_WINNER !== "" && ACTUAL_TOP_SCORER !== ""
-
-    if (finishedMatches.length > 0 && tournamentFinished) {
+    // Dodatkowy punkt końcowy: bonus za zwycięzcę + króla strzelców
+    if (finishedMatches.length > 0 && bonusResultReady) {
       const finalCumulative = { ...cumulative }
 
       bonusPredictions.forEach((b) => {
-        let bonusPts = 0
-        if (b.predicted_winner === ACTUAL_WINNER) bonusPts += 5
-        if (b.predicted_top_scorer === ACTUAL_TOP_SCORER) bonusPts += 5
-        finalCumulative[b.user_id] = (finalCumulative[b.user_id] ?? 0) + bonusPts
+        finalCumulative[b.user_id] = (finalCumulative[b.user_id] ?? 0) + (b.points || 0)
       })
 
       const finalLabel = "Wynik końcowy (+ bonus)"
@@ -256,14 +236,10 @@ export default function ProgressPage() {
       )
     }
 
-    // finalne punkty (z bonusem, jeśli turniej się skończył) do sortowania legendy
     const finalCumulativeForSort = { ...cumulative }
-    if (tournamentFinished) {
+    if (bonusResultReady) {
       bonusPredictions.forEach((b) => {
-        let bonusPts = 0
-        if (b.predicted_winner === ACTUAL_WINNER) bonusPts += 5
-        if (b.predicted_top_scorer === ACTUAL_TOP_SCORER) bonusPts += 5
-        finalCumulativeForSort[b.user_id] = (finalCumulativeForSort[b.user_id] ?? 0) + bonusPts
+        finalCumulativeForSort[b.user_id] = (finalCumulativeForSort[b.user_id] ?? 0) + (b.points || 0)
       })
     }
 
@@ -284,7 +260,7 @@ export default function ProgressPage() {
       rankData: rankChartData,
       nicknames: sortedNicknames,
     }
-  }, [matches, predictions, bonusPredictions])
+  }, [matches, predictions, bonusPredictions, bonusResultReady])
 
   if (loading) {
     return <div className="p-10">Loading...</div>
@@ -303,7 +279,6 @@ export default function ProgressPage() {
       <Navbar />
 
       <div className="p-10 space-y-6">
-        {/* PUNKTY */}
         <div className="bg-zinc-900 rounded-2xl p-6">
           <h2 className="text-xl font-bold mb-6 text-white">
             Przebieg turnieju — punkty
@@ -365,7 +340,6 @@ export default function ProgressPage() {
           )}
         </div>
 
-        {/* MIEJSCE W TABELI */}
         <div className="bg-zinc-900 rounded-2xl p-6">
           <h2 className="text-xl font-bold mb-6 text-white">
             Przebieg turnieju — miejsce w tabeli
