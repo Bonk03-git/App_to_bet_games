@@ -23,13 +23,14 @@ export default function DashboardPage() {
         <div className="space-y-3 text-sm text-gray-300">
 
           <p>
-            Każdy użytkownik typuje wyniki meczów przed ich rozpoczęciem. W przypadku meczy drabinkowych obstawiamy pierwsze 90 minut, nie uwzględniamy ewentualnej dogrywki!!!
+            Każdy użytkownik typuje wyniki meczów przed ich rozpoczęciem. W fazie pucharowej obstawiamy wynik po 90 minutach (bez dogrywki). Jeżeli obstawisz remis, dodatkowo wybierasz, kto wygra w dogrywce lub rzutach karnych.
           </p>
 
           <p>
             Punktacja:
             <br />• 3 pkt – poprawny wynik
             <br />• 1 pkt – poprawny zwycięzca (wygrana/remis/przegrana)
+            <br />• +1 pkt – w fazie pucharowej poprawnie wskazany zwycięzca dogrywki lub karnych
           </p>
 
           <p>
