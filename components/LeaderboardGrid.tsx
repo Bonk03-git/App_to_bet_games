@@ -286,9 +286,9 @@ export default function LeaderboardGrid() {
 
                   let pointsColorClass = "text-gray-500 bg-zinc-800"
                   if (cell && isMatchStarted(m.match_time)) {
-                    if (cell.points === 3) {
+                    if (cell.points === 3 || cell.points === 4) {
                       pointsColorClass = "text-green-400 bg-green-950/60 font-bold border border-green-500/30"
-                    } else if (cell.points === 1) {
+                    } else if (cell.points === 1 || cell.points === 2) {
                       pointsColorClass = "text-yellow-500 bg-yellow-950/50 font-semibold border border-yellow-500/20"
                     }
                   }

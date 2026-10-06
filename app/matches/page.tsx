@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Fragment, useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { useUser } from "@/lib/useUser"
 import Navbar from "@/components/Navbar"
@@ -81,6 +81,7 @@ interface Match {
   home_team: string
   away_team: string
   match_time: string
+  is_it_group_phase: boolean
 }
 
 export default function MatchesPage() {
@@ -88,8 +89,29 @@ export default function MatchesPage() {
     const { user } = useUser()
     const [predictions, setPredictions] = useState<any[]>([])
     const [bonusPrediction, setBonusPrediction] = useState<any>(null)
+    // Aktualny czas odświeżany co 30 s, żeby rozpoczęte mecze znikały bez przeładowania strony
+    const [now, setNow] = useState(() => new Date())
+    useEffect(() => {
+      const interval = setInterval(() => setNow(new Date()), 30000)
+      return () => clearInterval(interval)
+    }, [])
     const isMatchStarted = (matchTime: string) => {
-    return new Date() > new Date(matchTime)
+    return now >= new Date(matchTime)
+    }
+    // Wpisywane wyniki (żeby wykryć remis) i wybór zwycięzcy dogrywki/karnych w fazie pucharowej
+    const [scoreInputs, setScoreInputs] = useState<Record<string, { home: string; away: string }>>({})
+    const [winnerPicks, setWinnerPicks] = useState<Record<string, "home" | "away">>({})
+
+    const updateScoreInput = (matchId: string, side: "home" | "away", value: string) => {
+      setScoreInputs((prev) => ({
+        ...prev,
+        [matchId]: { ...(prev[matchId] ?? { home: "", away: "" }), [side]: value },
+      }))
+    }
+
+    const isDrawEntered = (matchId: string) => {
+      const input = scoreInputs[matchId]
+      return !!input && input.home !== "" && input.away !== "" && Number(input.home) === Number(input.away)
     }
     
     const isTournamentStarted = () => {
@@ -138,7 +160,8 @@ export default function MatchesPage() {
     fetchData()
   }, [user])
 
-  const savePrediction = async (matchId: string) => {
+  const savePrediction = async (match: Match) => {
+    const matchId = match.id
     const home = (document.getElementById(`home-${matchId}`) as HTMLInputElement).value
     const away = (document.getElementById(`away-${matchId}`) as HTMLInputElement).value
 
@@ -146,6 +169,15 @@ export default function MatchesPage() {
     alert("Proszę uzupełnić oba wyniki przed zapisaniem!")
     return
   }
+
+    // W fazie pucharowej przy remisie trzeba wskazać zwycięzcę dogrywki/karnych
+    const isKnockoutDraw = !match.is_it_group_phase && Number(home) === Number(away)
+    const whoWins = isKnockoutDraw ? winnerPicks[matchId] ?? null : null
+
+    if (isKnockoutDraw && !whoWins) {
+      alert("Wybierz, kto wygra w dogrywce lub karnych!")
+      return
+    }
 
     const userEmail = user?.email
 
@@ -158,6 +190,7 @@ export default function MatchesPage() {
         match_id: matchId,
         predicted_home_score: Number(home),
         predicted_away_score: Number(away),
+        who_wins: whoWins,
       },
       {
         onConflict: "user_id,match_id",
@@ -321,13 +354,26 @@ return (
         </div>
       )}
 
-      {upcomingMatches.map((match) => {
+      {upcomingMatches.map((match, index) => {
         const pred = predictions.find(
           (p) => p.match_id === match.id
         )
 
+        // Nagłówek nad pierwszym meczem fazy pucharowej
+        const isFirstKnockout =
+          !match.is_it_group_phase &&
+          (index === 0 || upcomingMatches[index - 1].is_it_group_phase)
+
         return (
-          <div key={match.id} className="bg-zinc-900 rounded-2xl p-6 shadow-md text-center">
+          <Fragment key={match.id}>
+          {isFirstKnockout && (
+            <div className="flex items-center gap-4 text-yellow-500 font-bold uppercase tracking-wide">
+              <div className="flex-1 border-t border-zinc-700" />
+              Faza pucharowa
+              <div className="flex-1 border-t border-zinc-700" />
+            </div>
+          )}
+          <div className="bg-zinc-900 rounded-2xl p-6 shadow-md text-center">
 
             <div className="text-2xl font-bold text-white">
               {match.home_team} vs {match.away_team}
@@ -341,6 +387,9 @@ return (
             {pred && (
               <div className="text-blue-500 mt-2">
                 Twój typ: {pred.predicted_home_score} - {pred.predicted_away_score}
+                {pred.who_wins && (
+                  <> (po dogrywce/karnych: {pred.who_wins === "home" ? match.home_team : match.away_team})</>
+                )}
               </div>
             )}
 
@@ -351,6 +400,7 @@ return (
                 placeholder="Obstaw"
                 className="bg-zinc-800 rounded-lg p-2 w-20 text-white text-center"
                 id={`home-${match.id}`}
+                onChange={(e) => updateScoreInput(match.id, "home", e.target.value)}
               />
 
               <input
@@ -358,17 +408,43 @@ return (
                 placeholder="Obstaw"
                 className="bg-zinc-800 rounded-lg p-2 w-20 text-white text-center"
                 id={`away-${match.id}`}
+                onChange={(e) => updateScoreInput(match.id, "away", e.target.value)}
               />
 
               <button
                 className="bg-green-600 hover:bg-green-500 transition rounded-lg px-4 py-2 text-white font-semibold"
-                onClick={() => savePrediction(match.id)}
+                onClick={() => savePrediction(match)}
               >
                 Zapisz
               </button>
             </div>
 
+            {/* FAZA PUCHAROWA - przy remisie wybór zwycięzcy dogrywki/karnych */}
+            {!match.is_it_group_phase && isDrawEntered(match.id) && (
+              <div className="mt-4">
+                <div className="text-sm text-gray-300 mb-2">
+                  Kto wygra w dogrywce lub karnych? (+1 pkt)
+                </div>
+                <div className="flex gap-2 justify-center">
+                  {(["home", "away"] as const).map((side) => (
+                    <button
+                      key={side}
+                      onClick={() => setWinnerPicks((prev) => ({ ...prev, [match.id]: side }))}
+                      className={`rounded-lg px-4 py-2 font-semibold transition ${
+                        winnerPicks[match.id] === side
+                          ? "bg-yellow-600 text-white"
+                          : "bg-zinc-800 text-gray-300 hover:bg-zinc-700"
+                      }`}
+                    >
+                      {side === "home" ? match.home_team : match.away_team}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
           </div>
+          </Fragment>
         )
       })}
     </div>
