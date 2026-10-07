@@ -47,6 +47,8 @@ export default function LeaderboardPage() {
   useEffect(() => {
     if (loading) return
 
+    let cancelled = false
+
     const fetchData = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
@@ -57,6 +59,8 @@ export default function LeaderboardPage() {
       const { data: players } = await supabase
         .from("players")
         .select("id, email, total_points, exact_hits")
+
+      if (cancelled) return
 
       const sorted = (players || [])
         .map((pl) => ({
@@ -76,6 +80,22 @@ export default function LeaderboardPage() {
     }
 
     fetchData()
+
+    // Ranking na żywo: punkty w players zmieniają się po każdej aktualizacji wyniku
+    let refetchTimer: ReturnType<typeof setTimeout> | undefined
+    const channel = supabase
+      .channel("leaderboard-ranking")
+      .on("postgres_changes", { event: "*", schema: "public", table: "players" }, () => {
+        clearTimeout(refetchTimer)
+        refetchTimer = setTimeout(fetchData, 500)
+      })
+      .subscribe()
+
+    return () => {
+      cancelled = true
+      clearTimeout(refetchTimer)
+      supabase.removeChannel(channel)
+    }
   }, [loading])
 
   if (loading) {

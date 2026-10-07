@@ -15,6 +15,9 @@ import { supabase } from "@/lib/supabase"
 import { useRequireAuth } from "@/lib/useRequireAuth"
 import Navbar from "@/components/Navbar"
 
+// Statusy z football-data.org oznaczające trwający mecz
+const LIVE_STATUSES = ["IN_PLAY", "PAUSED", "EXTRA_TIME", "PENALTY_SHOOTOUT"]
+
 type Match = {
   id: string
   home_team: string
@@ -22,6 +25,7 @@ type Match = {
   home_score: number | null
   away_score: number | null
   match_time: string
+  status: string | null
 }
 
 type Prediction = {
@@ -136,7 +140,8 @@ export default function ProgressPage() {
     })
 
     const finishedMatches = matches
-      .filter((m) => m.home_score != null && m.away_score != null)
+      // mecze trwające (wynik na żywo) nie trafiają jeszcze na wykres
+      .filter((m) => m.home_score != null && m.away_score != null && !LIVE_STATUSES.includes(m.status ?? ""))
       .sort(
         (a, b) =>
           new Date(a.match_time).getTime() - new Date(b.match_time).getTime()

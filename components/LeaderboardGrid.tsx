@@ -10,6 +10,7 @@ type Match = {
   home_score: number | null
   away_score: number | null
   match_time: string
+  status: string | null
 }
 
 type Prediction = {
@@ -37,6 +38,9 @@ type BonusResult = {
   top_scorer: string | null
 }
 
+// Statusy z football-data.org oznaczające trwający mecz
+const LIVE_STATUSES = ["IN_PLAY", "PAUSED", "EXTRA_TIME", "PENALTY_SHOOTOUT"]
+
 const bonusPointsColorClass = (points: number) => {
   if (points === 5) {
     return "text-green-400 bg-green-950/60 font-bold border border-green-500/30"
@@ -57,12 +61,18 @@ export default function LeaderboardGrid() {
     return new Date() >= new Date(matchTime)
   }
 
+  const isMatchLive = (status: string | null) => {
+    return status !== null && LIVE_STATUSES.includes(status)
+  }
+
   const isTournamentStarted = () => {
     if (matches.length === 0) return false
     return new Date() >= new Date(matches[0].match_time)
   }
 
   useEffect(() => {
+    let cancelled = false
+
     const fetchData = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
@@ -89,6 +99,8 @@ export default function LeaderboardGrid() {
         .eq("id", 1)
         .single()
 
+      if (cancelled) return
+
       setBonusResult(bonusResultData || { winner: null, top_scorer: null })
       setBonusPredictions(bonusData || [])
       setMatches(matchesData || [])
@@ -96,6 +108,25 @@ export default function LeaderboardGrid() {
     }
 
     fetchData()
+
+    // Wyniki na żywo: po zmianie meczu lub punktów w bazie pobieramy dane od nowa
+    let refetchTimer: ReturnType<typeof setTimeout> | undefined
+    const scheduleRefetch = () => {
+      clearTimeout(refetchTimer)
+      refetchTimer = setTimeout(fetchData, 500)
+    }
+
+    const channel = supabase
+      .channel("leaderboard-grid")
+      .on("postgres_changes", { event: "*", schema: "public", table: "matches" }, scheduleRefetch)
+      .on("postgres_changes", { event: "*", schema: "public", table: "predictions" }, scheduleRefetch)
+      .subscribe()
+
+    return () => {
+      cancelled = true
+      clearTimeout(refetchTimer)
+      supabase.removeChannel(channel)
+    }
   }, [])
 
   useEffect(() => {
@@ -206,7 +237,12 @@ export default function LeaderboardGrid() {
             {matches.map((m) => (
               <td key={`score-${m.id}`} className="text-center font-bold px-3 py-1.5 border-l border-zinc-800 text-sm">
                 {m.home_score !== null && m.away_score !== null ? (
-                  <span>{m.home_score} - {m.away_score}</span>
+                  <div className="flex flex-col items-center leading-tight">
+                    <span>{m.home_score} - {m.away_score}</span>
+                    {isMatchLive(m.status) && (
+                      <span className="text-[10px] text-red-500 font-semibold animate-pulse">● NA ŻYWO</span>
+                    )}
+                  </div>
                 ) : (
                   <span className="text-gray-500 font-normal">-</span>
                 )}
