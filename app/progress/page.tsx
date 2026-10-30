@@ -124,6 +124,25 @@ export default function ProgressPage() {
     }
 
     fetchData()
+
+    // Na żywo: po zakończeniu meczu i przeliczeniu punktów wykresy pobierają dane od nowa
+    // (unikalna nazwa kanału - patrz komentarz w app/leaderboard/page.tsx)
+    let refetchTimer: ReturnType<typeof setTimeout> | undefined
+    const scheduleRefetch = () => {
+      clearTimeout(refetchTimer)
+      refetchTimer = setTimeout(fetchData, 500)
+    }
+
+    const channel = supabase
+      .channel(`progress-${Date.now()}-${Math.random()}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "matches" }, scheduleRefetch)
+      .on("postgres_changes", { event: "*", schema: "public", table: "predictions" }, scheduleRefetch)
+      .subscribe()
+
+    return () => {
+      clearTimeout(refetchTimer)
+      supabase.removeChannel(channel)
+    }
   }, [loading])
 
   const { pointsData, rankData, nicknames } = useMemo(() => {

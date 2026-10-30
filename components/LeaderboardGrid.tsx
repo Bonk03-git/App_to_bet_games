@@ -110,6 +110,7 @@ export default function LeaderboardGrid() {
     fetchData()
 
     // Wyniki na żywo: po zmianie meczu lub punktów w bazie pobieramy dane od nowa
+    // (unikalna nazwa kanału - patrz komentarz w app/leaderboard/page.tsx)
     let refetchTimer: ReturnType<typeof setTimeout> | undefined
     const scheduleRefetch = () => {
       clearTimeout(refetchTimer)
@@ -117,7 +118,7 @@ export default function LeaderboardGrid() {
     }
 
     const channel = supabase
-      .channel("leaderboard-grid")
+      .channel(`leaderboard-grid-${Date.now()}-${Math.random()}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "matches" }, scheduleRefetch)
       .on("postgres_changes", { event: "*", schema: "public", table: "predictions" }, scheduleRefetch)
       .subscribe()

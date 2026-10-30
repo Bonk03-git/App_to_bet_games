@@ -82,9 +82,11 @@ export default function LeaderboardPage() {
     fetchData()
 
     // Ranking na żywo: punkty w players zmieniają się po każdej aktualizacji wyniku
+    // Unikalna nazwa kanału: supabase.channel() zwraca istniejący kanał o tej samej nazwie,
+    // a removeChannel z poprzedniego montowania (np. StrictMode) jeszcze go zamyka
     let refetchTimer: ReturnType<typeof setTimeout> | undefined
     const channel = supabase
-      .channel("leaderboard-ranking")
+      .channel(`leaderboard-ranking-${Date.now()}-${Math.random()}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "players" }, () => {
         clearTimeout(refetchTimer)
         refetchTimer = setTimeout(fetchData, 500)

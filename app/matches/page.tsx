@@ -158,6 +158,25 @@ export default function MatchesPage() {
     }
 
     fetchData()
+
+    // Na żywo: po zmianie meczów lub typów w bazie pobieramy dane od nowa
+    // (unikalna nazwa kanału - patrz komentarz w app/leaderboard/page.tsx)
+    let refetchTimer: ReturnType<typeof setTimeout> | undefined
+    const scheduleRefetch = () => {
+      clearTimeout(refetchTimer)
+      refetchTimer = setTimeout(fetchData, 500)
+    }
+
+    const channel = supabase
+      .channel(`matches-${Date.now()}-${Math.random()}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "matches" }, scheduleRefetch)
+      .on("postgres_changes", { event: "*", schema: "public", table: "predictions", filter: `user_id=eq.${user.id}` }, scheduleRefetch)
+      .subscribe()
+
+    return () => {
+      clearTimeout(refetchTimer)
+      supabase.removeChannel(channel)
+    }
   }, [user])
 
   const savePrediction = async (match: Match) => {
