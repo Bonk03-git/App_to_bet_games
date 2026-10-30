@@ -46,3 +46,5 @@ TURNIEJ.md
 
 # Supabase CLI (dane połączenia z projektem)
 supabase/.temp/
+
+cron.txt
