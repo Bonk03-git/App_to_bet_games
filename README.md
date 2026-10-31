@@ -29,5 +29,4 @@ npm run dev
 W pliku `.env` trzeba ustawić `NEXT_PUBLIC_SUPABASE_URL` i `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 
 ### DOKUMENTACJA
-- [architecture.md](architecture.md) – architektura, baza danych, wyniki na żywo, wdrożenie,
-- [TURNIEJ.md](TURNIEJ.md) – instrukcja krok po kroku przed turniejem, w trakcie i po nim.
+- [architecture.md](architecture.md) – architektura, baza danych, wyniki na żywo, wdrożenie.
