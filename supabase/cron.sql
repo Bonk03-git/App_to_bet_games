@@ -1,4 +1,4 @@
--- Harmonogram wywołań funkcji sync-results (co minutę).
+-- Harmonogram wywołań funkcji sync-results (co 10 sekund, pg_cron >= 1.5).
 -- Uruchomić raz w SQL Editorze w Supabase, po wdrożeniu funkcji.
 -- Funkcja sama sprawdza, czy trwa jakiś mecz - poza meczami nie odpytuje API.
 
@@ -11,7 +11,7 @@ create extension if not exists pg_net;
 
 select cron.schedule(
   'sync-results',
-  '* * * * *',
+  '10 seconds',
   $$
   select net.http_post(
     url := (select decrypted_secret from vault.decrypted_secrets where name = 'project_url') || '/functions/v1/sync-results',
