@@ -11,6 +11,8 @@ type Match = {
   away_score: number | null
   match_time: string
   status: string | null
+  is_it_group_phase: boolean
+  knockout_winner: "home" | "away" | null
 }
 
 type Prediction = {
@@ -19,12 +21,15 @@ type Prediction = {
   match_id: string
   predicted_home_score: number
   predicted_away_score: number
+  who_wins: "home" | "away" | null
   points: number
 }
 
 type Cell = {
   prediction: string
   points: number
+  // punkt za trafionego zwycięzcę dogrywki/karnych (faza pucharowa, remis po 90 minutach)
+  knockoutPoint: boolean
 }
 
 type BonusPrediction = {
@@ -178,6 +183,9 @@ export default function LeaderboardGrid() {
       const started = isMatchStarted(match.match_time)
       // punkty policzone już triggerem w bazie - tu tylko ukrywamy je przed startem meczu
       const points = started ? p.points : 0
+      // ten sam warunek co w triggerze w bazie (recompute_points_for_match)
+      const knockoutPoint =
+        started && !match.is_it_group_phase && p.who_wins !== null && p.who_wins === match.knockout_winner
 
       if (!grid[p.user_id]) {
         grid[p.user_id] = {}
@@ -186,6 +194,7 @@ export default function LeaderboardGrid() {
       grid[p.user_id][p.match_id] = {
         prediction: `${ph}-${pa}`,
         points,
+        knockoutPoint,
       }
     })
 
@@ -320,12 +329,14 @@ export default function LeaderboardGrid() {
                 {/* MATCHES */}
                 {matches.map((m) => {
                   const cell = grid[userId]?.[m.id]
+                  // punkty za sam wynik - punkt za dogrywkę/karne jest w osobnym boxie obok
+                  const matchPoints = cell ? (cell.knockoutPoint ? cell.points - 1 : cell.points) : 0
 
                   let pointsColorClass = "text-gray-500 bg-zinc-800"
                   if (cell && isMatchStarted(m.match_time)) {
-                    if (cell.points === 3 || cell.points === 4) {
+                    if (matchPoints === 3) {
                       pointsColorClass = "text-green-400 bg-green-950/60 font-bold border border-green-500/30"
-                    } else if (cell.points === 1 || cell.points === 2) {
+                    } else if (matchPoints === 1) {
                       pointsColorClass = "text-yellow-500 bg-yellow-950/50 font-semibold border border-yellow-500/20"
                     }
                   }
@@ -338,9 +349,17 @@ export default function LeaderboardGrid() {
                             <div className="font-bold text-zinc-200 text-sm tracking-wider">
                               {cell.prediction}
                             </div>
-                            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] ${pointsColorClass}`}>
-                              {cell.points} pkt
-                            </span>
+                            {/* box +1 wystaje w prawo, więc główne punkty zostają na środku */}
+                            <div className="relative inline-flex">
+                              <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] ${pointsColorClass}`}>
+                                {matchPoints} pkt
+                              </span>
+                              {cell.knockoutPoint && (
+                                <span className="absolute left-full top-0 ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] text-green-400 bg-green-950/60 font-bold border border-green-500/30">
+                                  +1
+                                </span>
+                              )}
+                            </div>
                           </div>
                         ) : (
                           <div className="text-gray-400">🔒</div>
