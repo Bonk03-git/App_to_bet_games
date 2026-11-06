@@ -33,6 +33,7 @@ type DbMatch = {
   knockout_winner: "home" | "away" | null
   external_id: number | null
   status: string | null
+  manual_result: boolean
 }
 
 const LIVE_STATUSES = ["IN_PLAY", "PAUSED", "EXTRA_TIME", "PENALTY_SHOOTOUT"]
@@ -153,7 +154,7 @@ Deno.serve(async (req) => {
 
   const { data: dbMatches, error: dbError } = await supabase
     .from("matches")
-    .select("id, home_team, away_team, match_time, home_score, away_score, is_it_group_phase, knockout_winner, external_id, status")
+    .select("id, home_team, away_team, match_time, home_score, away_score, is_it_group_phase, knockout_winner, external_id, status, manual_result")
   if (dbError) return Response.json({ error: dbError.message }, { status: 500 })
 
   const { links, unlinked } = linkMatches(dbMatches as DbMatch[], apiMatches)
@@ -174,7 +175,8 @@ Deno.serve(async (req) => {
     const patch: Partial<DbMatch> = {}
     if (a.status !== m.status) patch.status = a.status
 
-    const score = regularScore(a)
+    // Wynik wpisany ręcznie przez admina (panel /admin) ma pierwszeństwo - aktualizujemy tylko status
+    const score = m.manual_result ? null : regularScore(a)
     if (score && score.home !== null && score.away !== null) {
       if (score.home !== m.home_score) patch.home_score = score.home
       if (score.away !== m.away_score) patch.away_score = score.away

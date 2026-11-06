@@ -1,17 +1,55 @@
 @import "tailwindcss";
 
-:root {
-  --background: #09090b;
-  --foreground: #ffffff;
+/* Modele STL pucharu (75 MB, binarne) nie są częścią aplikacji - Tailwind ma ich nie skanować */
+@source not "../puchar";
+
+/* Fonty Geist ładowane w app/layout.tsx przez next/font */
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
 }
 
-html,
-body {
-  height: 100%;
-  background: var(--background);
-  color: var(--foreground);
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-zinc-950 text-white font-sans antialiased;
+  }
 }
 
-body {
-  font-family: Arial, Helvetica, sans-serif;
+/* Powtarzające się wzorce w całej aplikacji */
+@layer components {
+  /* Ciemna karta z zaokrąglonymi rogami */
+  .card {
+    @apply bg-zinc-900 rounded-2xl p-6;
+  }
+
+  /* Pola tekstowe, liczbowe i selecty */
+  .field {
+    @apply bg-zinc-800 text-white rounded-lg p-2 outline-none focus:ring-2 focus:ring-zinc-600;
+  }
+
+  /* Bazowy przycisk - kolor dodajemy osobno (np. bg-green-600 hover:bg-green-500) */
+  .btn {
+    @apply rounded-lg px-4 py-2 font-semibold text-white transition disabled:opacity-50;
+  }
+
+  /* Mała plakietka z punktami w tabeli */
+  .badge {
+    @apply inline-flex items-center px-1.5 py-0.5 rounded text-[10px];
+  }
+
+  .badge-hit {
+    @apply text-green-400 bg-green-950/60 font-bold border border-green-500/30;
+  }
+
+  .badge-outcome {
+    @apply text-yellow-500 bg-yellow-950/50 font-semibold border border-yellow-500/20;
+  }
+
+  .badge-miss {
+    @apply text-zinc-500 bg-zinc-800;
+  }
 }

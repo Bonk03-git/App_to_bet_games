@@ -109,7 +109,7 @@ export default function LeaderboardPage() {
       <Navbar />
 
       <div className="p-10 space-y-10">
-        <div className="bg-zinc-900 rounded-2xl p-6">
+        <div className="card">
           <h2 className="text-xl font-bold mb-4">🏆 Ranking</h2>
 
           <div className="space-y-2">
@@ -126,15 +126,15 @@ export default function LeaderboardPage() {
                   className={`flex justify-between items-center px-4 py-2 rounded-lg transition-colors ${cardBgClass}`}
                 >
                   <div className="flex gap-3 items-center">
-                    <span className="text-gray-400 w-6">{user.rank}.</span>
-                    <span className="font-medium text-white">
+                    <span className="text-zinc-400 w-6">{user.rank}.</span>
+                    <span className="font-medium">
                       {nickname(user.email)}
                     </span>
                   </div>
 
                   <div className="flex gap-4 items-center">
-                    <div className="font-bold text-white">{user.points} pkt</div>
-                    <div className={isCurrentUser ? "text-xs text-zinc-200" : "text-xs text-gray-400"}>
+                    <div className="font-bold">{user.points} pkt</div>
+                    <div className={isCurrentUser ? "text-xs text-zinc-200" : "text-xs text-zinc-400"}>
                       {user.exactHits} 🎯
                     </div>
                   </div>

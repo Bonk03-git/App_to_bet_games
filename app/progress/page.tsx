@@ -61,17 +61,8 @@ function SortedTooltip({ active, payload, label, suffix, order = "desc" }: any) 
   const matchLabel = payload[0]?.payload?.matchLabel
 
   return (
-    <div
-      style={{
-        backgroundColor: "#18181b",
-        border: "1px solid #3f3f46",
-        borderRadius: 8,
-        padding: "8px 12px",
-        color: "#fff",
-        fontSize: 12,
-      }}
-    >
-      <div style={{ marginBottom: 4, color: "#a1a1aa" }}>
+    <div className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-xs">
+      <div className="mb-1 text-zinc-400">
         {label}. {matchLabel}
       </div>
       {sorted.map((entry: any) => (
@@ -303,17 +294,17 @@ export default function ProgressPage() {
       <Navbar />
 
       <div className="p-10 space-y-6">
-        <div className="bg-zinc-900 rounded-2xl p-6">
-          <h2 className="text-xl font-bold mb-6 text-white">
+        <div className="card">
+          <h2 className="text-xl font-bold mb-6">
             Przebieg turnieju — punkty
           </h2>
 
           {pointsData.length === 0 ? (
-            <div className="text-gray-400">
+            <div className="text-zinc-400">
               Brak jeszcze rozegranych meczów z wynikiem.
             </div>
           ) : (
-            <div style={{ width: "100%", height: 500 }}>
+            <div className="w-full h-[500px]">
               <ResponsiveContainer>
                 <LineChart data={pointsData} margin={{ top: 10, right: 30, left: 0, bottom: 10 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" />
@@ -364,17 +355,17 @@ export default function ProgressPage() {
           )}
         </div>
 
-        <div className="bg-zinc-900 rounded-2xl p-6">
-          <h2 className="text-xl font-bold mb-6 text-white">
+        <div className="card">
+          <h2 className="text-xl font-bold mb-6">
             Przebieg turnieju — miejsce w tabeli
           </h2>
 
           {rankData.length === 0 ? (
-            <div className="text-gray-400">
+            <div className="text-zinc-400">
               Brak jeszcze rozegranych meczów z wynikiem.
             </div>
           ) : (
-            <div style={{ width: "100%", height: 500 }}>
+            <div className="w-full h-[500px]">
               <ResponsiveContainer>
                 <LineChart data={rankData} margin={{ top: 10, right: 30, left: 0, bottom: 10 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" />

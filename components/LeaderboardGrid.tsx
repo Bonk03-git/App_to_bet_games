@@ -48,9 +48,9 @@ const LIVE_STATUSES = ["IN_PLAY", "PAUSED", "EXTRA_TIME", "PENALTY_SHOOTOUT"]
 
 const bonusPointsColorClass = (points: number) => {
   if (points === 5) {
-    return "text-green-400 bg-green-950/60 font-bold border border-green-500/30"
+    return "badge-hit"
   }
-  return "text-gray-500 bg-zinc-800"
+  return "badge-miss"
 }
 
 export default function LeaderboardGrid() {
@@ -213,7 +213,7 @@ export default function LeaderboardGrid() {
     <div className="w-full overflow-x-auto bg-zinc-950">
       <table className="min-w-max border-collapse text-xs w-full">
         <thead>
-          <tr className="bg-zinc-950 text-white sticky top-0 z-50">
+          <tr className="bg-zinc-950 sticky top-0 z-50">
             <th className="sticky left-0 z-50 bg-zinc-950 px-4 py-2 text-center border-r border-zinc-800 shadow-md">
               Gracz
             </th>
@@ -230,7 +230,7 @@ export default function LeaderboardGrid() {
               >
                 <div className="flex flex-col items-center leading-tight">
                   <span className="font-bold">{m.home_team}</span>
-                  <span className="text-gray-400 text-[10px]">vs</span>
+                  <span className="text-zinc-400 text-[10px]">vs</span>
                   <span className="font-bold">{m.away_team}</span>
                 </div>
               </th>
@@ -254,7 +254,7 @@ export default function LeaderboardGrid() {
                     )}
                   </div>
                 ) : (
-                  <span className="text-gray-500 font-normal">-</span>
+                  <span className="text-zinc-500 font-normal">-</span>
                 )}
               </td>
             ))}
@@ -269,9 +269,7 @@ export default function LeaderboardGrid() {
             return (
               <tr key={userId} className={rowBgClass}>
                 <td className="sticky left-0 z-40 bg-zinc-950 text-center px-4 py-2 font-medium border-r border-zinc-800 shadow-md">
-                  <span className="text-white">
-                    {usersMap[userId].email?.split("@")[0]}
-                  </span>
+                  {usersMap[userId].email?.split("@")[0]}
                 </td>
 
                 {/* WINNER */}
@@ -282,7 +280,7 @@ export default function LeaderboardGrid() {
                     const points = winnerCorrect ? 5 : 0
 
                     if (!isTournamentStarted()) {
-                      return <div className="text-gray-400">🔒</div>
+                      return <div className="text-zinc-400">🔒</div>
                     }
 
                     return bonus?.predicted_winner ? (
@@ -290,12 +288,12 @@ export default function LeaderboardGrid() {
                         <div className="font-bold text-zinc-200 text-sm tracking-wider">
                           {bonus.predicted_winner}
                         </div>
-                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] ${bonusPointsColorClass(points)}`}>
+                        <span className={`badge ${bonusPointsColorClass(points)}`}>
                           {points} pkt
                         </span>
                       </div>
                     ) : (
-                      <div className="text-gray-400">-</div>
+                      <div className="text-zinc-400">-</div>
                     )
                   })()}
                 </td>
@@ -308,7 +306,7 @@ export default function LeaderboardGrid() {
                     const points = scorerCorrect ? 5 : 0
 
                     if (!isTournamentStarted()) {
-                      return <div className="text-gray-400">🔒</div>
+                      return <div className="text-zinc-400">🔒</div>
                     }
 
                     return bonus?.predicted_top_scorer ? (
@@ -316,12 +314,12 @@ export default function LeaderboardGrid() {
                         <div className="font-bold text-zinc-200 text-sm tracking-wider">
                           {bonus.predicted_top_scorer}
                         </div>
-                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] ${bonusPointsColorClass(points)}`}>
+                        <span className={`badge ${bonusPointsColorClass(points)}`}>
                           {points} pkt
                         </span>
                       </div>
                     ) : (
-                      <div className="text-gray-400">-</div>
+                      <div className="text-zinc-400">-</div>
                     )
                   })()}
                 </td>
@@ -332,12 +330,12 @@ export default function LeaderboardGrid() {
                   // punkty za sam wynik - punkt za dogrywkę/karne jest w osobnym boxie obok
                   const matchPoints = cell ? (cell.knockoutPoint ? cell.points - 1 : cell.points) : 0
 
-                  let pointsColorClass = "text-gray-500 bg-zinc-800"
+                  let pointsColorClass = "badge-miss"
                   if (cell && isMatchStarted(m.match_time)) {
                     if (matchPoints === 3) {
-                      pointsColorClass = "text-green-400 bg-green-950/60 font-bold border border-green-500/30"
+                      pointsColorClass = "badge-hit"
                     } else if (matchPoints === 1) {
-                      pointsColorClass = "text-yellow-500 bg-yellow-950/50 font-semibold border border-yellow-500/20"
+                      pointsColorClass = "badge-outcome"
                     }
                   }
 
@@ -351,21 +349,21 @@ export default function LeaderboardGrid() {
                             </div>
                             {/* box +1 wystaje w prawo, więc główne punkty zostają na środku */}
                             <div className="relative inline-flex">
-                              <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] ${pointsColorClass}`}>
+                              <span className={`badge ${pointsColorClass}`}>
                                 {matchPoints} pkt
                               </span>
                               {cell.knockoutPoint && (
-                                <span className="absolute left-full top-0 ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] text-green-400 bg-green-950/60 font-bold border border-green-500/30">
+                                <span className="badge badge-hit absolute left-full top-0 ml-1">
                                   +1
                                 </span>
                               )}
                             </div>
                           </div>
                         ) : (
-                          <div className="text-gray-400">🔒</div>
+                          <div className="text-zinc-400">🔒</div>
                         )
                       ) : (
-                        <div className="text-gray-400">-</div>
+                        <div className="text-zinc-400">-</div>
                       )}
                     </td>
                   )

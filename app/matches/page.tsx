@@ -293,7 +293,7 @@ return (
   
   <div className="max-w-3xl mx-auto p-10">
 
-    <div className="bg-zinc-900 rounded-2xl p-6 mb-8 text-white">
+    <div className="card mb-8">
       <h2 className="text-2xl font-bold mb-4">
         Bonusy
       </h2>
@@ -312,18 +312,18 @@ return (
       )}
 
       {isTournamentStarted() ? (
-        <div className="text-center text-gray-300 space-y-2">
+        <div className="text-center text-zinc-300 space-y-2">
           <div>
             <p>
               Wytypowany zwycięzca:{" "}
-              <span className="font-bold text-white">
+              <span className="font-bold">
                 {bonusPrediction?.predicted_winner || "-"}
               </span>
             </p>
 
             <p>
               Wytypowany król strzelców:{" "}
-              <span className="font-bold text-white">
+              <span className="font-bold">
                 {bonusPrediction?.predicted_top_scorer || "-"}
               </span>
             </p>
@@ -334,7 +334,7 @@ return (
           
           <select
             id="winner"
-            className="bg-zinc-800 p-3 rounded-lg"
+            className="field p-3"
             defaultValue={bonusPrediction?.predicted_winner || ""}
           >
             <option value="">Wybierz zwycięzcę</option>
@@ -348,13 +348,13 @@ return (
           <input
             id="scorer"
             placeholder="Król strzelców"
-            className="bg-zinc-800 p-3 rounded-lg"
+            className="field p-3"
             defaultValue={bonusPrediction?.predicted_top_scorer || ""}
           />
 
           <button
             onClick={saveBonusPrediction}
-            className="bg-yellow-600 hover:bg-yellow-500 transition rounded-lg p-3 font-bold"
+            className="btn bg-yellow-600 hover:bg-yellow-500 p-3 font-bold"
           >
             Zapisz Bonusowe Predykcje
           </button>
@@ -368,7 +368,7 @@ return (
 
     <div className="space-y-6">
       {upcomingMatches.length === 0 && (
-        <div className="text-gray-400 text-center">
+        <div className="text-zinc-400 text-center">
           Brak nadchodzących meczów do obstawienia.
         </div>
       )}
@@ -392,13 +392,13 @@ return (
               <div className="flex-1 border-t border-zinc-700" />
             </div>
           )}
-          <div className="bg-zinc-900 rounded-2xl p-6 shadow-md text-center">
+          <div className="card shadow-md text-center">
 
-            <div className="text-2xl font-bold text-white">
+            <div className="text-2xl font-bold">
               {match.home_team} vs {match.away_team}
             </div>
 
-            <div className="text-sm text-gray-400 mt-2">
+            <div className="text-sm text-zinc-400 mt-2">
               {new Date(match.match_time).toLocaleString()}
             </div>
 
@@ -417,7 +417,7 @@ return (
               <input
                 type="number"
                 placeholder="Obstaw"
-                className="bg-zinc-800 rounded-lg p-2 w-20 text-white text-center"
+                className="field w-20 text-center"
                 id={`home-${match.id}`}
                 onChange={(e) => updateScoreInput(match.id, "home", e.target.value)}
               />
@@ -425,13 +425,13 @@ return (
               <input
                 type="number"
                 placeholder="Obstaw"
-                className="bg-zinc-800 rounded-lg p-2 w-20 text-white text-center"
+                className="field w-20 text-center"
                 id={`away-${match.id}`}
                 onChange={(e) => updateScoreInput(match.id, "away", e.target.value)}
               />
 
               <button
-                className="bg-green-600 hover:bg-green-500 transition rounded-lg px-4 py-2 text-white font-semibold"
+                className="btn bg-green-600 hover:bg-green-500"
                 onClick={() => savePrediction(match)}
               >
                 Zapisz
@@ -441,7 +441,7 @@ return (
             {/* FAZA PUCHAROWA - przy remisie wybór zwycięzcy dogrywki/karnych */}
             {!match.is_it_group_phase && isDrawEntered(match.id) && (
               <div className="mt-4">
-                <div className="text-sm text-gray-300 mb-2">
+                <div className="text-sm text-zinc-300 mb-2">
                   Kto wygra w dogrywce lub karnych? (+1 pkt)
                 </div>
                 <div className="flex gap-2 justify-center">
@@ -449,10 +449,10 @@ return (
                     <button
                       key={side}
                       onClick={() => setWinnerPicks((prev) => ({ ...prev, [match.id]: side }))}
-                      className={`rounded-lg px-4 py-2 font-semibold transition ${
+                      className={`btn ${
                         winnerPicks[match.id] === side
-                          ? "bg-yellow-600 text-white"
-                          : "bg-zinc-800 text-gray-300 hover:bg-zinc-700"
+                          ? "bg-yellow-600"
+                          : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
                       }`}
                     >
                       {side === "home" ? match.home_team : match.away_team}

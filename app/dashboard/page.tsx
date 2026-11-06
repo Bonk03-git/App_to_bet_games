@@ -14,13 +14,13 @@ export default function DashboardPage() {
 
     <div className="p-10">
 
-      <div className="bg-zinc-900 text-white rounded-2xl p-6 mt-6 shadow">
+      <div className="card mt-6 shadow">
 
         <h2 className="text-xl font-bold mb-3">
           Jak działa aplikacja?
         </h2>
 
-        <div className="space-y-3 text-sm text-gray-300">
+        <div className="space-y-3 text-sm text-zinc-300">
 
           <p>
             Każdy użytkownik typuje wyniki meczów przed ich rozpoczęciem. W fazie pucharowej obstawiamy wynik po 90 minutach (bez dogrywki). Jeżeli obstawisz remis, dodatkowo wybierasz, kto wygra w dogrywce lub rzutach karnych.
@@ -74,12 +74,12 @@ export default function DashboardPage() {
 
         {/* MATCHES */}
         <Link href="/matches">
-          <div className="bg-zinc-900 text-white rounded-2xl shadow p-8 h-44 flex flex-col items-center justify-center text-center hover:scale-105 transition cursor-pointer">
-            <h2 className="text-2xl font-bold mb-2 text-white">
+          <div className="card shadow p-8 h-44 flex flex-col items-center justify-center text-center hover:scale-105 transition cursor-pointer">
+            <h2 className="text-2xl font-bold mb-2">
               ⚽ Mecze
             </h2>
 
-            <p className="text-gray-400">
+            <p className="text-zinc-400">
               Typowanie meczów
             </p>
           </div>
@@ -87,12 +87,12 @@ export default function DashboardPage() {
 
         {/* LEADERBOARD */}
         <Link href="/leaderboard">
-          <div className="bg-zinc-900 text-white rounded-2xl shadow p-8 h-44 flex flex-col items-center justify-center text-center hover:scale-105 transition cursor-pointer">
-            <h2 className="text-2xl font-bold mb-2 text-white">
+          <div className="card shadow p-8 h-44 flex flex-col items-center justify-center text-center hover:scale-105 transition cursor-pointer">
+            <h2 className="text-2xl font-bold mb-2">
               🏆 Tabela
             </h2>
 
-            <p className="text-gray-400">
+            <p className="text-zinc-400">
               Ranking graczy i punkty
             </p>
           </div>

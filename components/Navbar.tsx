@@ -3,10 +3,12 @@
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { signOut } from "@/lib/auth"
+import { useIsAdmin } from "@/lib/useIsAdmin"
 
 export default function Navbar() {
   const pathname = usePathname()
   const router = useRouter()
+  const { isAdmin } = useIsAdmin()
 
   const handleLogout = async () => {
     await signOut()
@@ -15,12 +17,11 @@ export default function Navbar() {
 
   const linkClass = (path: string) =>
     pathname === path
-      ? "text-blue-600 font-bold"
-      : "text-gray-700"
+      ? "text-blue-500 font-bold"
+      : "text-zinc-400 hover:text-white transition"
 
   return (
-    <div className="flex justify-between items-center p-4 mb-6">
-      
+    <nav className="flex justify-between items-center p-4 mb-6">
       <Link href="/dashboard" className="font-bold text-lg">
         ⚽ World Cup Predictor
       </Link>
@@ -43,14 +44,20 @@ export default function Navbar() {
           Przebieg
         </Link>
 
+        {isAdmin && (
+          <Link href="/admin" className={linkClass("/admin")}>
+            Admin
+          </Link>
+        )}
+
         <button
           onClick={handleLogout}
-          className="text-red-500"
+          className="text-red-500 hover:text-red-400 transition"
         >
           Wyloguj
         </button>
 
       </div>
-    </div>
+    </nav>
   )
 }
