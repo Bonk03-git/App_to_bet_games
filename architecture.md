@@ -1,6 +1,6 @@
 # Architektura – Predykcje MŚ2026
 
-Dokumentacja techniczna aplikacji. Ogólny opis projektu jest w [README.md](README.md), a instrukcja obsługi turnieju krok po kroku (przygotowanie, w trakcie, po turnieju) w [TURNIEJ.md](TURNIEJ.md).
+Dokumentacja techniczna aplikacji. Ogólny opis projektu jest w [README.md](README.md).
 
 ---
 
@@ -50,23 +50,27 @@ app/
   matches/              – obstawianie meczów i typ bonusowy
   leaderboard/          – ranking + macierz typów (LeaderboardGrid)
   progress/             – wykresy punktów w czasie
+  leagues/              – dołączanie do lig, wyjście, zakładanie (admin)
+  admin/                – panel admina: ręczne wyniki meczów
 components/
   Navbar.tsx            – nawigacja i wylogowanie
   LeaderboardGrid.tsx   – tabela użytkownicy × mecze
+  LeagueSelect.tsx      – wybór ligi
 lib/
   supabase.ts           – wspólny klient Supabase
   auth.ts               – signIn / signUp / signOut (login → e-mail)
   useRequireAuth.ts     – ochrona stron wymagających logowania
   useUser.ts            – aktualny użytkownik
-  scoring.ts            – stara kopia zasad punktacji (nieużywana)
+  useIsAdmin.ts         – czy zalogowany jest adminem (link i przekierowanie)
+  useLeagues.ts         – ligi gracza, wybrana liga, przełącznik „Obstaw wszędzie to samo”
+  copyPredictions.ts    – kopiowanie typów do nowej ligi
 supabase/
   functions/sync-results/index.ts      – pobieranie wyników
   schema.sql            – pełny schemat bazy (tabele, funkcje, triggery, RLS, uprawnienia)
   dump_schema.sql       – zapytanie, które generuje schema.sql
   cron.sql              – harmonogram pg_cron
 scripts/fetch-fixtures.mjs             – INSERT-y meczów z football-data.org (z external_id)
-games.py, worldcup.json, wynik.sql     – jednorazowe wgranie terminarza
-puchar/                 – modele STL pucharu (poza aplikacją)
+puchar/                 – modele STL pucharu do druku 3D (tylko lokalnie, w .gitignore)
 ```
 
 ## 4. Logowanie
@@ -200,9 +204,17 @@ Następnie w SQL Editorze trzeba dodać sekrety `project_url` i `cron_secret` do
 
 ## 9. Wgrywanie terminarza
 
-`games.py` to jednorazowy skrypt. Czyta `worldcup.json` (terminarz po angielsku, z lokalnymi przesunięciami UTC), tłumaczy nazwy drużyn na polski (`deep_translator`) i przelicza godziny na czas polski (UTC+2). Wynik zapisuje jako `INSERT INTO matches ...` w `wynik.sql`.
+Mecze wgrywa się skryptem `scripts/fetch-fixtures.mjs` (token `FOOTBALL_DATA_TOKEN` w `.env.local`):
 
-Tłumaczenie maszynowe się myli (np. Turkey → „Indyk”), więc przed wgraniem trzeba sprawdzić nazwy.
+```bash
+node --env-file=.env.local scripts/fetch-fixtures.mjs WC 60 > mecze.sql
+```
+
+Skrypt pobiera terminarz z football-data.org i tworzy `INSERT INTO matches ...` z `external_id`, godziną w czasie polskim i `is_it_group_phase`. Wynik wkleja się w SQL Editorze. Sekret funkcji `FOOTBALL_DATA_COMPETITION` musi mieć ten sam kod rozgrywek. Nazwy drużyn są po angielsku – przed wgraniem turnieju dla graczy można je przetłumaczyć w pliku (`external_id` się nie zmienia).
+
+## Puchar
+
+Folder `puchar/` z modelami STL pucharu i podstawki (do druku 3D, ok. 76 MB) jest tylko lokalnie i jest w `.gitignore`. Nie jest częścią aplikacji. Podstawkę z nową datą trzeba przygotować przed każdym turniejem.
 
 ## 10. Uruchomienie lokalne
 

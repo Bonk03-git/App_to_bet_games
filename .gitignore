@@ -44,6 +44,9 @@ next-env.d.ts
 
 TURNIEJ.md
 
+# modele STL pucharu (ok. 76 MB) - trzymane tylko lokalnie, poza repozytorium
+puchar/
+
 # Supabase CLI (dane połączenia z projektem)
 supabase/.temp/
 
