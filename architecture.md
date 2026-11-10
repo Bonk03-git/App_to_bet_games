@@ -61,8 +61,10 @@ lib/
   scoring.ts            – stara kopia zasad punktacji (nieużywana)
 supabase/
   functions/sync-results/index.ts      – pobieranie wyników
-  migrations/20261007120000_live_results.sql
+  schema.sql            – pełny schemat bazy (tabele, funkcje, triggery, RLS, uprawnienia)
+  dump_schema.sql       – zapytanie, które generuje schema.sql
   cron.sql              – harmonogram pg_cron
+scripts/fetch-fixtures.mjs             – INSERT-y meczów z football-data.org (z external_id)
 games.py, worldcup.json, wynik.sql     – jednorazowe wgranie terminarza
 puchar/                 – modele STL pucharu (poza aplikacją)
 ```
@@ -87,7 +89,7 @@ puchar/                 – modele STL pucharu (poza aplikacją)
 | `league_members` | członkowie lig (`league_id`, `user_id`, `user_email`); dołączanie hasłem (`join_league`), wyjście (`leave_league`) |
 | `league_standings` (widok) | ranking ligi: suma punktów typów i bonusu oraz dokładne trafienia per (liga, gracz) |
 
-`predictions` i `bonus_predictions` mają kolumnę `league_id` – w każdej lidze gracz ma osobne typy. Przełącznik „Obstaw wszędzie to samo” na stronie Mecze zapisuje typ we wszystkich ligach gracza naraz (migracja `20261110120000_leagues.sql`).
+`predictions` i `bonus_predictions` mają kolumnę `league_id` – w każdej lidze gracz ma osobne typy. Przełącznik „Obstaw wszędzie to samo” na stronie Mecze zapisuje typ we wszystkich ligach gracza naraz.
 
 ### Punktacja (w bazie)
 
@@ -102,7 +104,7 @@ Punkty za każdy typ (`predictions.points`) i sumy w `players` liczą triggery w
 
 Liczy się wynik **po 90 minutach**. Trigger `trg_matches_points` przelicza punkty po zmianie `home_score`, `away_score` lub `knockout_winner`. Wynik można też wpisać albo poprawić ręcznie w bazie, a punkty przeliczą się same.
 
-Triggery liczące punkty istnieją tylko w bazie, nie w repozytorium. Dlatego przed większymi zmianami warto zrobić zrzut schematu (patrz [TURNIEJ.md](TURNIEJ.md)).
+Funkcje i triggery punktów są opisane w `supabase/schema.sql`. Mają `security definer`, bo admin wpisuje wynik z aplikacji (rola `authenticated`), a RLS pozwala zwykłym użytkownikom zmieniać tylko własne typy.
 
 ## 6. Blokady czasowe (frontend)
 
@@ -175,13 +177,9 @@ Plik: `supabase/functions/sync-results/index.ts`.
 
 `supabase/cron.sql` tworzy zadanie `sync-results` w `pg_cron`. Zadanie co 10 sekund wywołuje funkcję przez `pg_net`, a adres projektu i sekret odczytuje z Supabase Vault (`project_url`, `cron_secret`). Lokalna kopia sekretu crona jest w `cron.txt` (plik w `.gitignore`).
 
-### Migracja
+### Baza
 
-`supabase/migrations/20261007120000_live_results.sql`:
-
-- dodaje kolumny `external_id` (unikalna) i `status` do `matches`,
-- włącza Realtime dla `matches`, `predictions` i `players`,
-- ustawia trigger punktów także na zmianę `knockout_winner`.
+Kolumny `external_id` (unikalna) i `status` w `matches`, Realtime dla `matches`, `predictions`, `players`, `league_members` i `bet_markers` oraz trigger punktów na zmianę `knockout_winner` są w `supabase/schema.sql`.
 
 ### Frontend
 
@@ -191,8 +189,9 @@ Plik: `supabase/functions/sync-results/index.ts`.
 
 ### Wdrożenie
 
+Na nowym projekcie Supabase najpierw uruchom w SQL Editorze `supabase/schema.sql` (cały schemat), a potem:
+
 ```bash
-npx supabase db push                                   # migracja
 npx supabase functions deploy sync-results --no-verify-jwt
 npx supabase secrets set FOOTBALL_DATA_TOKEN=... FOOTBALL_DATA_COMPETITION=... CRON_SECRET=...
 ```
