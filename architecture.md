@@ -82,7 +82,12 @@ puchar/                 – modele STL pucharu (poza aplikacją)
 | `predictions` | typy na mecze; unikalne `(user_id, match_id)`, zapisywane przez upsert; kolumna `points` |
 | `bonus_predictions` | typ bonusowy (zwycięzca turnieju, król strzelców); jeden wiersz na użytkownika |
 | `bonus_results` | jeden wiersz: `winner`, `top_scorer` |
-| `players` | `total_points`, `exact_hits` – z tej tabeli czyta ranking |
+| `players` | `total_points`, `exact_hits` – sumy ze wszystkich lig; aplikacja już z niej nie korzysta |
+| `leagues` | ligi: `name`, `password_hash` (bcrypt, niedostępny z aplikacji); zakłada je tylko admin (`create_league`) |
+| `league_members` | członkowie lig (`league_id`, `user_id`, `user_email`); dołączanie hasłem (`join_league`), wyjście (`leave_league`) |
+| `league_standings` (widok) | ranking ligi: suma punktów typów i bonusu oraz dokładne trafienia per (liga, gracz) |
+
+`predictions` i `bonus_predictions` mają kolumnę `league_id` – w każdej lidze gracz ma osobne typy. Przełącznik „Obstaw wszędzie to samo” na stronie Mecze zapisuje typ we wszystkich ligach gracza naraz (migracja `20261110120000_leagues.sql`).
 
 ### Punktacja (w bazie)
 

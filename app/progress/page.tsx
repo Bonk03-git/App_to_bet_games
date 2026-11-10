@@ -14,6 +14,8 @@ import {
 import { supabase } from "@/lib/supabase"
 import { useRequireAuth } from "@/lib/useRequireAuth"
 import Navbar from "@/components/Navbar"
+import LeagueSelect, { NoLeagues } from "@/components/LeagueSelect"
+import { useLeagues } from "@/lib/useLeagues"
 
 // Statusy z football-data.org oznaczające trwający mecz
 const LIVE_STATUSES = ["IN_PLAY", "PAUSED", "EXTRA_TIME", "PENALTY_SHOOTOUT"]
@@ -76,7 +78,10 @@ function SortedTooltip({ active, payload, label, suffix, order = "desc" }: any) 
 
 export default function ProgressPage() {
   const { loading } = useRequireAuth()
+  const { leagues, loading: leaguesLoading, selectedLeague, selectLeague } = useLeagues()
+  const leagueId = selectedLeague?.id ?? null
   const [matches, setMatches] = useState<Match[]>([])
+  const [members, setMembers] = useState<{ user_id: string; user_email: string }[]>([])
   const [predictions, setPredictions] = useState<Prediction[]>([])
   const [bonusPredictions, setBonusPredictions] = useState<BonusPrediction[]>([])
   const [bonusResultReady, setBonusResultReady] = useState(false)
@@ -85,7 +90,7 @@ export default function ProgressPage() {
   const [selectedRankUser, setSelectedRankUser] = useState<string | null>(null)
 
   useEffect(() => {
-    if (loading) return
+    if (loading || !leagueId) return
 
     const fetchData = async () => {
       const { data: matchesData } = await supabase
@@ -93,13 +98,21 @@ export default function ProgressPage() {
         .select("*")
         .order("match_time", { ascending: true })
 
+      // Tylko wybrana liga
       const { data: predsData } = await supabase
         .from("predictions")
         .select("*")
+        .eq("league_id", leagueId)
 
       const { data: bonusData } = await supabase
         .from("bonus_predictions")
         .select("*")
+        .eq("league_id", leagueId)
+
+      const { data: membersData } = await supabase
+        .from("league_members")
+        .select("user_id, user_email")
+        .eq("league_id", leagueId)
 
       // Wynik bonusowy - jeśli oba pola są wpisane, turniej jest "rozstrzygnięty"
       const { data: bonusResultData } = await supabase
@@ -110,6 +123,7 @@ export default function ProgressPage() {
 
       setMatches(matchesData || [])
       setPredictions(predsData || [])
+      setMembers(membersData || [])
       setBonusPredictions(bonusData || [])
       setBonusResultReady(!!(bonusResultData?.winner && bonusResultData?.top_scorer))
     }
@@ -127,26 +141,20 @@ export default function ProgressPage() {
     const channel = supabase
       .channel(`progress-${Date.now()}-${Math.random()}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "matches" }, scheduleRefetch)
-      .on("postgres_changes", { event: "*", schema: "public", table: "predictions" }, scheduleRefetch)
+      .on("postgres_changes", { event: "*", schema: "public", table: "predictions", filter: `league_id=eq.${leagueId}` }, scheduleRefetch)
       .subscribe()
 
     return () => {
       clearTimeout(refetchTimer)
       supabase.removeChannel(channel)
     }
-  }, [loading])
+  }, [loading, leagueId])
 
   const { pointsData, rankData, nicknames } = useMemo(() => {
+    // Gracze = członkowie wybranej ligi
     const usersMap: Record<string, string> = {}
-    predictions.forEach((p) => {
-      if (!usersMap[p.user_id]) {
-        usersMap[p.user_id] = p.user_email?.split("@")[0] || p.user_id
-      }
-    })
-    bonusPredictions.forEach((b) => {
-      if (!usersMap[b.user_id]) {
-        usersMap[b.user_id] = b.user_id
-      }
+    members.forEach((m) => {
+      usersMap[m.user_id] = m.user_email?.split("@")[0] || m.user_id
     })
 
     const finishedMatches = matches
@@ -202,6 +210,7 @@ export default function ProgressPage() {
     finishedMatches.forEach((m, idx) => {
       predictions
         .filter((p) => p.match_id === m.id)
+        .filter((p) => usersMap[p.user_id] !== undefined)
         .forEach((p) => {
           // punkty już policzone triggerem w bazie
           cumulative[p.user_id] = (cumulative[p.user_id] || 0) + p.points
@@ -275,10 +284,23 @@ export default function ProgressPage() {
       rankData: rankChartData,
       nicknames: sortedNicknames,
     }
-  }, [matches, predictions, bonusPredictions, bonusResultReady])
+  }, [matches, predictions, members, bonusPredictions, bonusResultReady])
 
   if (loading) {
     return <div className="p-10">Loading...</div>
+  }
+
+  // Dopóki nie wiemy, w jakich ligach jest gracz, nie pokazujemy pustej strony
+  // (inaczej przez chwilę widać pusty podgląd, a dopiero potem "dołącz do ligi")
+  if (leaguesLoading || leagues.length === 0) {
+    return (
+      <div>
+        <Navbar />
+        <div className="max-w-3xl mx-auto p-10">
+          {leaguesLoading ? <div className="text-zinc-400 text-center">Ładowanie...</div> : <NoLeagues />}
+        </div>
+      </div>
+    )
   }
 
   const handleLegendClick = (
@@ -294,6 +316,8 @@ export default function ProgressPage() {
       <Navbar />
 
       <div className="p-10 space-y-6">
+        <LeagueSelect leagues={leagues} selectedLeague={selectedLeague} onSelect={selectLeague} />
+
         <div className="card">
           <h2 className="text-xl font-bold mb-6">
             Przebieg turnieju — punkty

@@ -44,6 +44,10 @@ export default function Navbar() {
           Przebieg
         </Link>
 
+        <Link href="/leagues" className={linkClass("/leagues")}>
+          Ligi
+        </Link>
+
         {isAdmin && (
           <Link href="/admin" className={linkClass("/admin")}>
             Admin

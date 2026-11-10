@@ -5,6 +5,8 @@ import { supabase } from "@/lib/supabase"
 import { useRequireAuth } from "@/lib/useRequireAuth"
 import Navbar from "@/components/Navbar"
 import LeaderboardGrid from "@/components/LeaderboardGrid"
+import LeagueSelect, { NoLeagues } from "@/components/LeagueSelect"
+import { useLeagues } from "@/lib/useLeagues"
 
 interface Row {
   user_id: string
@@ -16,6 +18,8 @@ interface Row {
 
 export default function LeaderboardPage() {
   const { loading } = useRequireAuth()
+  const { leagues, loading: leaguesLoading, selectedLeague, selectLeague } = useLeagues()
+  const leagueId = selectedLeague?.id ?? null
   const [board, setBoard] = useState<Row[]>([])
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
@@ -45,7 +49,7 @@ export default function LeaderboardPage() {
   }
 
   useEffect(() => {
-    if (loading) return
+    if (loading || !leagueId) return
 
     let cancelled = false
 
@@ -55,17 +59,18 @@ export default function LeaderboardPage() {
         setCurrentUserId(user.id)
       }
 
-      // Punkty i trafienia są już policzone i zsumowane w bazie (triggery)
-      const { data: players } = await supabase
-        .from("players")
-        .select("id, email, total_points, exact_hits")
+      // Punkty za typy liczą triggery w bazie, a widok league_standings sumuje je w obrębie ligi
+      const { data: standings } = await supabase
+        .from("league_standings")
+        .select("user_id, user_email, total_points, exact_hits")
+        .eq("league_id", leagueId)
 
       if (cancelled) return
 
-      const sorted = (players || [])
+      const sorted = (standings || [])
         .map((pl) => ({
-          user_id: pl.id,
-          email: pl.email,
+          user_id: pl.user_id,
+          email: pl.user_email,
           points: pl.total_points,
           exactHits: pl.exact_hits,
         }))
@@ -81,13 +86,17 @@ export default function LeaderboardPage() {
 
     fetchData()
 
-    // Ranking na żywo: punkty w players zmieniają się po każdej aktualizacji wyniku
+    // Ranking na żywo: punkty typów zmieniają się po każdej aktualizacji wyniku
     // Unikalna nazwa kanału: supabase.channel() zwraca istniejący kanał o tej samej nazwie,
     // a removeChannel z poprzedniego montowania (np. StrictMode) jeszcze go zamyka
     let refetchTimer: ReturnType<typeof setTimeout> | undefined
     const channel = supabase
       .channel(`leaderboard-ranking-${Date.now()}-${Math.random()}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "players" }, () => {
+      .on("postgres_changes", { event: "*", schema: "public", table: "predictions", filter: `league_id=eq.${leagueId}` }, () => {
+        clearTimeout(refetchTimer)
+        refetchTimer = setTimeout(fetchData, 500)
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "league_members", filter: `league_id=eq.${leagueId}` }, () => {
         clearTimeout(refetchTimer)
         refetchTimer = setTimeout(fetchData, 500)
       })
@@ -98,10 +107,23 @@ export default function LeaderboardPage() {
       clearTimeout(refetchTimer)
       supabase.removeChannel(channel)
     }
-  }, [loading])
+  }, [loading, leagueId])
 
   if (loading) {
     return <div className="p-10">Loading...</div>
+  }
+
+  // Dopóki nie wiemy, w jakich ligach jest gracz, nie pokazujemy pustej strony
+  // (inaczej przez chwilę widać pusty podgląd, a dopiero potem "dołącz do ligi")
+  if (leaguesLoading || leagues.length === 0) {
+    return (
+      <div>
+        <Navbar />
+        <div className="max-w-3xl mx-auto p-10">
+          {leaguesLoading ? <div className="text-zinc-400 text-center">Ładowanie...</div> : <NoLeagues />}
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -109,6 +131,8 @@ export default function LeaderboardPage() {
       <Navbar />
 
       <div className="p-10 space-y-10">
+        <LeagueSelect leagues={leagues} selectedLeague={selectedLeague} onSelect={selectLeague} />
+
         <div className="card">
           <h2 className="text-xl font-bold mb-4">🏆 Ranking</h2>
 
@@ -144,7 +168,7 @@ export default function LeaderboardPage() {
           </div>
         </div>
 
-        <LeaderboardGrid />
+        {leagueId && <LeaderboardGrid key={leagueId} leagueId={leagueId} />}
       </div>
     </div>
   )

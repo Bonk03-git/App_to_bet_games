@@ -60,7 +60,7 @@ export default function DashboardPage() {
           </p>
 
           <p className="text-yellow-400 font-medium">
-            ⚠️ Użytkownik pojawia się w tabeli dopiero po oddaniu pierwszego typu.
+            ⚠️ Gra toczy się w ligach. W zakładce "LIGI" dołączasz do ligi, jeśli znasz jej hasło. W każdej lidze możesz obstawiać inaczej, a przełącznik "Obstaw wszędzie to samo" zapisuje ten sam typ we wszystkich Twoich ligach.
           </p>
 
           <p>

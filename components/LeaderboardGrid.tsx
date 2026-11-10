@@ -53,12 +53,22 @@ const bonusPointsColorClass = (points: number) => {
   return "badge-miss"
 }
 
-export default function LeaderboardGrid() {
+type Member = {
+  user_id: string
+  user_email: string
+}
+
+export default function LeaderboardGrid({ leagueId }: { leagueId: string }) {
   const [matches, setMatches] = useState<Match[]>([])
+  const [members, setMembers] = useState<Member[]>([])
   const [predictions, setPredictions] = useState<Prediction[]>([])
   const [bonusPredictions, setBonusPredictions] = useState<BonusPrediction[]>([])
   const [bonusResult, setBonusResult] = useState<BonusResult>({ winner: null, top_scorer: null })
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  // Kto już obstawił (bez samego typu) - do kłódek przed startem meczu/turnieju.
+  // Cudze typy RLS pokazuje dopiero po starcie, więc bierzemy to z tabeli bet_markers (match_id null = bonus).
+  const [placedBets, setPlacedBets] = useState<Set<string>>(new Set())
+  const [placedBonus, setPlacedBonus] = useState<Set<string>>(new Set())
 
   const matchRefs = useRef<Record<string, HTMLTableCellElement | null>>({})
 
@@ -89,13 +99,21 @@ export default function LeaderboardGrid() {
         .select("*")
         .order("match_time", { ascending: true })
 
+      // Tylko wybrana liga (RLS i tak pokazuje cudze typy dopiero po starcie meczu)
       const { data: predsData } = await supabase
         .from("predictions")
         .select("*")
+        .eq("league_id", leagueId)
 
       const { data: bonusData } = await supabase
         .from("bonus_predictions")
         .select("*")
+        .eq("league_id", leagueId)
+
+      const { data: membersData } = await supabase
+        .from("league_members")
+        .select("user_id, user_email")
+        .eq("league_id", leagueId)
 
       // Wynik bonusowy pobierany z bazy zamiast na sztywno w kodzie
       const { data: bonusResultData } = await supabase
@@ -106,10 +124,21 @@ export default function LeaderboardGrid() {
 
       if (cancelled) return
 
+      const { data: markersData } = await supabase
+        .from("bet_markers")
+        .select("user_id, match_id")
+        .eq("league_id", leagueId)
+
+      if (cancelled) return
+
+      const markers = markersData || []
+      setPlacedBets(new Set(markers.filter((r) => r.match_id).map((r) => `${r.user_id}:${r.match_id}`)))
+      setPlacedBonus(new Set(markers.filter((r) => !r.match_id).map((r) => r.user_id)))
       setBonusResult(bonusResultData || { winner: null, top_scorer: null })
       setBonusPredictions(bonusData || [])
       setMatches(matchesData || [])
       setPredictions(predsData || [])
+      setMembers(membersData || [])
     }
 
     fetchData()
@@ -125,7 +154,10 @@ export default function LeaderboardGrid() {
     const channel = supabase
       .channel(`leaderboard-grid-${Date.now()}-${Math.random()}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "matches" }, scheduleRefetch)
-      .on("postgres_changes", { event: "*", schema: "public", table: "predictions" }, scheduleRefetch)
+      .on("postgres_changes", { event: "*", schema: "public", table: "predictions", filter: `league_id=eq.${leagueId}` }, scheduleRefetch)
+      .on("postgres_changes", { event: "*", schema: "public", table: "league_members", filter: `league_id=eq.${leagueId}` }, scheduleRefetch)
+      // nowa kłódka, gdy ktoś z ligi obstawi (sam typ przyjdzie dopiero po starcie meczu)
+      .on("postgres_changes", { event: "*", schema: "public", table: "bet_markers", filter: `league_id=eq.${leagueId}` }, scheduleRefetch)
       .subscribe()
 
     return () => {
@@ -133,7 +165,7 @@ export default function LeaderboardGrid() {
       clearTimeout(refetchTimer)
       supabase.removeChannel(channel)
     }
-  }, [])
+  }, [leagueId])
 
   useEffect(() => {
     if (!matches.length) return
@@ -164,18 +196,16 @@ export default function LeaderboardGrid() {
   }, [matches])
 
   const gridData = useMemo(() => {
+    // Wiersze = członkowie ligi (także ci, którzy jeszcze nic nie obstawili)
     const usersMap: Record<string, { email: string }> = {}
+    members.forEach((m) => {
+      usersMap[m.user_id] = { email: m.user_email }
+    })
     const grid: Record<string, Record<string, Cell>> = {}
 
     predictions.forEach((p) => {
       const match = matches.find((m) => m.id === p.match_id)
-      if (!match) return
-
-      if (!usersMap[p.user_id]) {
-        usersMap[p.user_id] = {
-          email: p.user_email,
-        }
-      }
+      if (!match || !usersMap[p.user_id]) return
 
       const ph = Number(p.predicted_home_score ?? 0)
       const pa = Number(p.predicted_away_score ?? 0)
@@ -205,7 +235,7 @@ export default function LeaderboardGrid() {
     })
 
     return { usersMap, grid, sortedUserIds }
-  }, [matches, predictions, currentUserId])
+  }, [matches, predictions, members, currentUserId])
 
   const { usersMap, grid, sortedUserIds } = gridData
 
@@ -280,7 +310,7 @@ export default function LeaderboardGrid() {
                     const points = winnerCorrect ? 5 : 0
 
                     if (!isTournamentStarted()) {
-                      return <div className="text-zinc-400">🔒</div>
+                      return <div className="text-zinc-400">{placedBonus.has(userId) ? "🔒" : "-"}</div>
                     }
 
                     return bonus?.predicted_winner ? (
@@ -306,7 +336,7 @@ export default function LeaderboardGrid() {
                     const points = scorerCorrect ? 5 : 0
 
                     if (!isTournamentStarted()) {
-                      return <div className="text-zinc-400">🔒</div>
+                      return <div className="text-zinc-400">{placedBonus.has(userId) ? "🔒" : "-"}</div>
                     }
 
                     return bonus?.predicted_top_scorer ? (
@@ -341,8 +371,12 @@ export default function LeaderboardGrid() {
 
                   return (
                     <td key={m.id} className="text-center px-3 py-2 border-l border-zinc-800 min-w-[110px]">
-                      {cell ? (
-                        isMatchStarted(m.match_time) ? (
+                      {!isMatchStarted(m.match_time) ? (
+                        // przed startem: kłódka = gracz już obstawił (typ ukryty)
+                        <div className="text-zinc-400">
+                          {cell || placedBets.has(`${userId}:${m.id}`) ? "🔒" : "-"}
+                        </div>
+                      ) : cell ? (
                           <div className="flex flex-col items-center justify-center gap-1">
                             <div className="font-bold text-zinc-200 text-sm tracking-wider">
                               {cell.prediction}
@@ -359,9 +393,6 @@ export default function LeaderboardGrid() {
                               )}
                             </div>
                           </div>
-                        ) : (
-                          <div className="text-zinc-400">🔒</div>
-                        )
                       ) : (
                         <div className="text-zinc-400">-</div>
                       )}
