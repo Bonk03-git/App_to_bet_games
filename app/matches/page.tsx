@@ -338,16 +338,15 @@ export default function MatchesPage() {
 
       <div className="max-w-3xl mx-auto p-10">
 
-        {/* LIGI */}
-        <div className="card mb-8">
-          <LeagueSelect
-            leagues={leagues}
-            selectedLeague={selectedLeague}
-            onSelect={selectLeague}
-            allLeagues={sameEverywhere && leagues.length > 1}
-          >
-            {/* przełącznik ma sens dopiero przy co najmniej dwóch ligach */}
-            {leagues.length > 1 && (
+        {/* LIGI - wybór i przełącznik mają sens dopiero przy co najmniej dwóch ligach */}
+        {leagues.length > 1 && (
+          <div className="card mb-8">
+            <LeagueSelect
+              leagues={leagues}
+              selectedLeague={selectedLeague}
+              onSelect={selectLeague}
+              allLeagues={sameEverywhere}
+            >
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="checkbox"
@@ -357,9 +356,9 @@ export default function MatchesPage() {
                 />
                 <span>Obstaw wszędzie to samo</span>
               </label>
-            )}
-          </LeagueSelect>
-        </div>
+            </LeagueSelect>
+          </div>
+        )}
 
         <div className="card mb-8">
           <h2 className="text-2xl font-bold mb-4">

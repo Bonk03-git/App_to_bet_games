@@ -23,7 +23,8 @@ create table public.admins (
 create table public.bet_markers (
   league_id uuid not null,
   user_id uuid not null,
-  match_id uuid
+  match_id uuid,
+  id bigint generated always as identity not null
 );
 
 create table public.bonus_predictions (
@@ -97,6 +98,8 @@ create table public.predictions (
 
 alter table public.admins add constraint admins_pkey PRIMARY KEY (user_id);
 
+alter table public.bet_markers add constraint bet_markers_pkey PRIMARY KEY (id);
+
 alter table public.bet_markers add constraint bet_markers_unique UNIQUE NULLS NOT DISTINCT (league_id, user_id, match_id);
 
 alter table public.bonus_predictions add constraint bonus_predictions_pkey PRIMARY KEY (id);
@@ -156,6 +159,90 @@ CREATE INDEX league_members_user_idx ON public.league_members USING btree (user_
 CREATE UNIQUE INDEX leagues_name_unique ON public.leagues USING btree (lower(btrim(name)));
 
 CREATE INDEX predictions_league_idx ON public.predictions USING btree (league_id);
+
+CREATE OR REPLACE FUNCTION public.admin_list_users()
+ RETURNS TABLE(id uuid, email text, created_at timestamp with time zone, last_sign_in_at timestamp with time zone, is_admin boolean, leagues jsonb)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+begin
+  if not public.is_admin() then
+    raise exception 'Tylko admin może przeglądać konta';
+  end if;
+
+  return query
+  select
+    u.id,
+    u.email::text,
+    u.created_at,
+    u.last_sign_in_at,
+    exists (select 1 from public.admins a where a.user_id = u.id),
+    coalesce(
+      (select jsonb_agg(jsonb_build_object('id', l.id, 'name', l.name) order by l.name)
+       from public.league_members lm
+       join public.leagues l on l.id = lm.league_id
+       where lm.user_id = u.id),
+      '[]'::jsonb
+    )
+  from auth.users u
+  order by u.email;
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.admin_remove_from_league(p_user_id uuid, p_league_id uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+begin
+  if not public.is_admin() then
+    raise exception 'Tylko admin może usuwać graczy z lig';
+  end if;
+  if not exists (
+    select 1 from public.league_members where user_id = p_user_id and league_id = p_league_id
+  ) then
+    raise exception 'Gracz nie należy do tej ligi';
+  end if;
+
+  delete from public.predictions where user_id = p_user_id and league_id = p_league_id;
+  delete from public.bonus_predictions where user_id = p_user_id and league_id = p_league_id;
+  delete from public.league_members where user_id = p_user_id and league_id = p_league_id;
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.admin_delete_user(p_user_id uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+begin
+  if not public.is_admin() then
+    raise exception 'Tylko admin może usuwać konta';
+  end if;
+  if p_user_id = auth.uid() then
+    raise exception 'Nie możesz usunąć własnego konta';
+  end if;
+  if exists (select 1 from public.admins where user_id = p_user_id) then
+    raise exception 'Nie można usunąć konta admina';
+  end if;
+  if not exists (select 1 from auth.users where id = p_user_id) then
+    raise exception 'Nie ma takiego konta';
+  end if;
+
+  -- bonus_predictions nie ma klucza obcego do auth.users, więc kasujemy jawnie (resztę też, dla porządku)
+  delete from public.bonus_predictions where user_id = p_user_id;
+  delete from public.predictions where user_id = p_user_id;
+  delete from public.league_members where user_id = p_user_id;
+  delete from public.players where id = p_user_id;
+  delete from auth.users where id = p_user_id;
+end;
+$function$
+;
 
 CREATE OR REPLACE FUNCTION public.calculate_bonus_points(actual_winner text, actual_top_scorer text, pred_winner text, pred_top_scorer text)
  RETURNS integer
@@ -626,6 +713,18 @@ revoke all on public.predictions from anon, authenticated;
 grant delete, insert, maintain, references, select, trigger, truncate, update on public.predictions to anon;
 
 grant delete, insert, maintain, references, select, trigger, truncate, update on public.predictions to authenticated;
+
+revoke all on function public.admin_delete_user(p_user_id uuid) from public, anon, authenticated;
+
+grant execute on function public.admin_delete_user(p_user_id uuid) to authenticated;
+
+revoke all on function public.admin_list_users() from public, anon, authenticated;
+
+grant execute on function public.admin_list_users() to authenticated;
+
+revoke all on function public.admin_remove_from_league(p_user_id uuid, p_league_id uuid) from public, anon, authenticated;
+
+grant execute on function public.admin_remove_from_league(p_user_id uuid, p_league_id uuid) to authenticated;
 
 revoke all on function public.calculate_bonus_points(actual_winner text, actual_top_scorer text, pred_winner text, pred_top_scorer text) from public, anon, authenticated;
 

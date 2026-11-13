@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase"
 import Navbar from "@/components/Navbar"
 import { useRequireAuth } from "@/lib/useRequireAuth"
 import { useIsAdmin } from "@/lib/useIsAdmin"
+import UsersPanel from "./UsersPanel"
 
 interface Match {
   id: string
@@ -190,6 +191,7 @@ export default function AdminPage() {
   const { isAdmin, loading } = useIsAdmin()
   const [matches, setMatches] = useState<Match[]>([])
   const [showUpcoming, setShowUpcoming] = useState(false)
+  const [tab, setTab] = useState<"matches" | "users">("matches")
 
   // Strona tylko dla admina (zapis i tak blokuje RLS)
   useEffect(() => {
@@ -237,7 +239,25 @@ export default function AdminPage() {
 
       <div className="max-w-3xl mx-auto p-10 space-y-6">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Panel admina</h1>
+          <h1 className="text-3xl font-bold mb-4">Panel admina</h1>
+          <div className="flex gap-2">
+            {([["matches", "Wyniki meczów"], ["users", "Konta i ligi"]] as const).map(([key, label]) => (
+              <button
+                key={key}
+                className={`btn ${tab === key ? "bg-blue-600 hover:bg-blue-500" : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"}`}
+                onClick={() => setTab(key)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {tab === "users" ? (
+          <UsersPanel />
+        ) : (
+        <>
+        <div>
           <p className="text-zinc-400 text-sm">
             Wpisz wynik po 90 minutach. W fazie pucharowej przy remisie wybierz zwycięzcę
             dogrywki/karnych. Wynik zapisany tutaj nie zostanie nadpisany przez automatyczną
@@ -261,6 +281,8 @@ export default function AdminPage() {
         {visible.map((m) => (
           <MatchRow key={m.id} match={m} />
         ))}
+        </>
+        )}
       </div>
     </div>
   )
